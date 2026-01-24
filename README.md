@@ -184,6 +184,11 @@ The chatbot does not generate narratives or predictions. It explains and justifi
 - Questions outside silver market scope
 
 ---
+This system deliberately refuses to:
+• Predict prices
+• Give trading advice
+• Hallucinate narratives
+• Override backend intelligence
 
 ## 📝 Notes
 
