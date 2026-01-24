@@ -105,6 +105,9 @@ function updateDashboard(data) {
 
     // Update noise analysis
     renderNoiseAnalysis(narratives, noise);
+
+    // Update War Room
+    renderWarRoom(narratives);
 }
 
 function updateStatsCards(narratives) {
@@ -682,6 +685,103 @@ function initNavigation() {
             document.getElementById(`${sectionId}-section`).classList.add('active');
         });
     });
+}
+
+// ============================================
+// Strategic Overview - Narrative Landscape
+// ============================================
+
+/**
+ * Classify narratives into War Room zones.
+ * Uses existing fields: stage, confidence, persistence
+ * 
+ * Classification logic:
+ * - Dominant: (Growth/Acceleration) + high confidence (>0.6) + high persistence (>0.5)
+ * - Fading: Decay stage OR low persistence (<0.4) OR low confidence (<0.4)
+ * - Contested: Everything else (moderate signals, mixed lifecycle)
+ */
+function classifyNarrativesForWarRoom(narratives) {
+    const dominant = [];
+    const contested = [];
+    const fading = [];
+
+    narratives.forEach(n => {
+        const stage = n.stage || 'Early';
+        const confidence = n.confidence || 0.5;
+        const persistence = n.persistence || 0.5;
+
+        // Fading: Decay stage, or weak signals
+        if (stage === 'Decay' || persistence < 0.4 || confidence < 0.4) {
+            fading.push(n);
+        }
+        // Dominant: Growth/Acceleration with strong signals
+        else if ((stage === 'Growth' || stage === 'Acceleration') &&
+            confidence >= 0.6 && persistence >= 0.5) {
+            dominant.push(n);
+        }
+        // Contested: Everything in between
+        else {
+            contested.push(n);
+        }
+    });
+
+    return { dominant, contested, fading };
+}
+
+/**
+ * Render the War Room view with three intelligence zones.
+ */
+function renderWarRoom(narratives) {
+    const zones = classifyNarrativesForWarRoom(narratives);
+
+    // Update counts
+    document.getElementById('dominantCount').textContent = zones.dominant.length;
+    document.getElementById('contestedCount').textContent = zones.contested.length;
+    document.getElementById('fadingCount').textContent = zones.fading.length;
+
+    // Render cards
+    document.getElementById('dominantNarratives').innerHTML =
+        renderWarRoomCards(zones.dominant, 'dominant');
+    document.getElementById('contestedNarratives').innerHTML =
+        renderWarRoomCards(zones.contested, 'contested');
+    document.getElementById('fadingNarratives').innerHTML =
+        renderWarRoomCards(zones.fading, 'fading');
+}
+
+/**
+ * Render compact cards for a War Room zone.
+ */
+function renderWarRoomCards(narratives, zoneType) {
+    if (narratives.length === 0) {
+        return `<div class="zone-empty">No narratives in this zone</div>`;
+    }
+
+    return narratives.map((n, idx) => {
+        const stageClass = (n.stage || 'early').toLowerCase();
+        const delay = idx * 0.05;
+
+        return `
+            <div class="warroom-card" 
+                 onclick="showNarrativeDetail('${n.id}')"
+                 style="animation-delay: ${delay}s">
+                <div class="warroom-card-header">
+                    <span class="warroom-card-name">${n.name}</span>
+                    <span class="warroom-card-stage stage-tag ${stageClass}">${n.stage}</span>
+                </div>
+                <div class="warroom-dna">
+                    <div class="warroom-dna-bar" title="Coherence: ${Math.round(n.coherence * 100)}%">
+                        <div class="warroom-dna-fill coherence" style="width: ${n.coherence * 100}%"></div>
+                    </div>
+                    <div class="warroom-dna-bar" title="Persistence: ${Math.round(n.persistence * 100)}%">
+                        <div class="warroom-dna-fill persistence" style="width: ${n.persistence * 100}%"></div>
+                    </div>
+                    <div class="warroom-dna-bar" title="Confidence: ${Math.round(n.confidence * 100)}%">
+                        <div class="warroom-dna-fill confidence" style="width: ${n.confidence * 100}%"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // ============================================

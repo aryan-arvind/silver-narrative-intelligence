@@ -44,6 +44,10 @@
                     <span class="nav-icon">◇</span>
                     <span class="nav-text">Noise Analysis</span>
                 </a>
+                <a href="#" class="nav-item" data-section="warroom">
+                    <span class="nav-icon">⬡</span>
+                    <span class="nav-text">Strategic Overview</span>
+                </a>
                 <a href="#" class="nav-item" data-section="explain">
                     <span class="nav-icon">?</span>
                     <span class="nav-text">Explain</span>
@@ -175,6 +179,49 @@
                             Discarded Noise
                         </h3>
                         <div class="panel-content" id="discardedNoise"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Strategic Overview Section -->
+            <section id="warroom-section" class="section">
+                <div class="warroom-header">
+                    <h2 class="section-title">Strategic Overview</h2>
+                    <p class="warroom-subtitle">Narrative landscape: Which narratives are actionable right now?</p>
+                </div>
+
+                <div class="warroom-grid">
+                    <!-- Dominant Narratives Zone -->
+                    <div class="warroom-zone zone-dominant">
+                        <div class="zone-header">
+                            <span class="zone-icon">▲</span>
+                            <span class="zone-title">Dominant</span>
+                            <span class="zone-count" id="dominantCount">0</span>
+                        </div>
+                        <p class="zone-description">Strong, sustained narratives in Growth or Acceleration</p>
+                        <div class="zone-cards" id="dominantNarratives"></div>
+                    </div>
+
+                    <!-- Contested Narratives Zone -->
+                    <div class="warroom-zone zone-contested">
+                        <div class="zone-header">
+                            <span class="zone-icon">◆</span>
+                            <span class="zone-title">Contested</span>
+                            <span class="zone-count" id="contestedCount">0</span>
+                        </div>
+                        <p class="zone-description">Uncertain narratives with mixed signals</p>
+                        <div class="zone-cards" id="contestedNarratives"></div>
+                    </div>
+
+                    <!-- Fading Narratives Zone -->
+                    <div class="warroom-zone zone-fading">
+                        <div class="zone-header">
+                            <span class="zone-icon">▽</span>
+                            <span class="zone-title">Fading</span>
+                            <span class="zone-count" id="fadingCount">0</span>
+                        </div>
+                        <p class="zone-description">Weakening narratives losing relevance</p>
+                        <div class="zone-cards" id="fadingNarratives"></div>
                     </div>
                 </div>
             </section>

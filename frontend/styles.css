@@ -1184,6 +1184,211 @@ body {
 }
 
 /* ========================================
+   STRATEGIC OVERVIEW - Narrative Landscape
+   ======================================== */
+.warroom-header {
+    margin-bottom: var(--spacing-xl);
+}
+
+.warroom-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: var(--spacing-xs);
+}
+
+.warroom-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+}
+
+.warroom-zone {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    min-height: 300px;
+    transition: all var(--transition-fast);
+}
+
+.zone-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.zone-icon {
+    font-size: 1rem;
+}
+
+.zone-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex: 1;
+}
+
+.zone-count {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+}
+
+.zone-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.4;
+}
+
+/* Zone-specific styling */
+.zone-dominant {
+    border-left: 3px solid var(--bullish);
+}
+
+.zone-dominant .zone-icon {
+    color: var(--bullish);
+}
+
+.zone-contested {
+    border-left: 3px solid var(--accent-warning);
+}
+
+.zone-contested .zone-icon {
+    color: var(--accent-warning);
+}
+
+.zone-fading {
+    border-left: 3px solid var(--text-muted);
+    opacity: 0.85;
+}
+
+.zone-fading .zone-icon {
+    color: var(--text-muted);
+}
+
+.zone-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+/* War Room Compact Cards */
+.warroom-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    animation: cardSlideIn 0.3s ease-out;
+}
+
+@keyframes cardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.warroom-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateX(4px);
+}
+
+.warroom-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.warroom-card-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.warroom-card-stage {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+}
+
+/* Mini DNA fingerprint */
+.warroom-dna {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-xs);
+}
+
+.warroom-dna-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.warroom-dna-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.warroom-dna-fill.coherence {
+    background: var(--accent-primary);
+}
+
+.warroom-dna-fill.persistence {
+    background: var(--accent-secondary);
+}
+
+.warroom-dna-fill.confidence {
+    background: var(--accent-tertiary);
+}
+
+/* Fading zone cards are muted */
+.zone-fading .warroom-card {
+    opacity: 0.8;
+}
+
+.zone-fading .warroom-card:hover {
+    opacity: 1;
+}
+
+/* Empty zone state */
+.zone-empty {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+    padding: var(--spacing-lg);
+    text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .warroom-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .warroom-zone {
+        min-height: auto;
+    }
+}
+
+/* ========================================
    INTERROGATION MODE
    ======================================== */
 .interrogation-panel {
