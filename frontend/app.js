@@ -7,8 +7,7 @@
 const API_BASE_URL = 'http://localhost:8000';
 const ENDPOINTS = {
     narratives: `${API_BASE_URL}/api/narratives`,
-    health: `${API_BASE_URL}/api/health`,
-    explain: `${API_BASE_URL}/api/explain`
+    health: `${API_BASE_URL}/api/health`
 };
 
 // State
@@ -23,25 +22,25 @@ const elements = {
     errorClose: document.getElementById('errorClose'),
     refreshBtn: document.getElementById('refreshBtn'),
     lastUpdated: document.getElementById('lastUpdated'),
-
+    
     // Stats
     activeNarratives: document.getElementById('activeNarratives'),
     marketBias: document.getElementById('marketBias'),
     biasIcon: document.getElementById('biasIcon'),
     narrativeVolatility: document.getElementById('narrativeVolatility'),
     signalConfidence: document.getElementById('signalConfidence'),
-
+    
     // Lists
     narrativesList: document.getElementById('narrativesList'),
     narrativesGrid: document.getElementById('narrativesGrid'),
     chartLegend: document.getElementById('chartLegend'),
-
+    
     // Sections
     timelineContainer: document.getElementById('timelineContainer'),
     signalsContainer: document.getElementById('signalsContainer'),
     validNarratives: document.getElementById('validNarratives'),
     discardedNoise: document.getElementById('discardedNoise'),
-
+    
     // Detail Panel
     detailPanel: document.getElementById('detailPanel'),
     detailTitle: document.getElementById('detailTitle'),
@@ -56,20 +55,20 @@ const elements = {
 async function fetchNarratives() {
     showLoading(true);
     hideError();
-
+    
     try {
         const response = await fetch(ENDPOINTS.narratives);
-
+        
         if (!response.ok) {
             throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
-
+        
         const data = await response.json();
         narrativesData = data;
-
+        
         updateDashboard(data);
         updateLastUpdated();
-
+        
     } catch (error) {
         console.error('Failed to fetch narratives:', error);
         showError(`Failed to connect to backend: ${error.message}. Make sure the API is running on ${API_BASE_URL}`);
@@ -84,70 +83,67 @@ async function fetchNarratives() {
 
 function updateDashboard(data) {
     const { narratives, noise, metadata } = data;
-
+    
     // Update stats cards
     updateStatsCards(narratives);
-
+    
     // Update narrative chart
     updateNarrativeChart(narratives);
-
+    
     // Update narratives list
     renderNarrativesList(narratives);
-
+    
     // Update full narratives grid
     renderNarrativesGrid(narratives);
-
+    
     // Update timeline
     renderTimeline(narratives);
-
+    
     // Update signals
     renderSignals(narratives);
-
+    
     // Update noise analysis
     renderNoiseAnalysis(narratives, noise);
-
-    // Update War Room
-    renderWarRoom(narratives);
 }
 
 function updateStatsCards(narratives) {
     // Active narratives count
     elements.activeNarratives.textContent = narratives.length;
-
+    
     // Market bias - aggregate sentiment
     const sentimentCounts = { Bullish: 0, Bearish: 0, Neutral: 0 };
     narratives.forEach(n => sentimentCounts[n.sentiment]++);
-
+    
     let bias = 'Neutral';
     if (sentimentCounts.Bullish > sentimentCounts.Bearish + sentimentCounts.Neutral) {
         bias = 'Bullish';
     } else if (sentimentCounts.Bearish > sentimentCounts.Bullish + sentimentCounts.Neutral) {
         bias = 'Bearish';
     }
-
+    
     elements.marketBias.textContent = bias;
-    elements.biasIcon.style.color = bias === 'Bullish' ? 'var(--bullish)' :
-        bias === 'Bearish' ? 'var(--bearish)' : 'var(--neutral)';
-
+    elements.biasIcon.style.color = bias === 'Bullish' ? 'var(--bullish)' : 
+                                     bias === 'Bearish' ? 'var(--bearish)' : 'var(--neutral)';
+    
     // Narrative volatility - variance in confidence scores
     const confidences = narratives.map(n => n.confidence);
     const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length || 0;
     const variance = confidences.reduce((sum, c) => sum + Math.pow(c - avgConfidence, 2), 0) / confidences.length || 0;
     const volatility = Math.min(Math.sqrt(variance) * 2, 1); // Normalize
     elements.narrativeVolatility.textContent = volatility < 0.3 ? 'Low' : volatility < 0.6 ? 'Medium' : 'High';
-
+    
     // Signal confidence - average confidence
     elements.signalConfidence.textContent = `${Math.round(avgConfidence * 100)}%`;
 }
 
 function updateNarrativeChart(narratives) {
     const ctx = document.getElementById('narrativeChart').getContext('2d');
-
+    
     // Destroy existing chart
     if (narrativeChart) {
         narrativeChart.destroy();
     }
-
+    
     // Prepare data - each narrative has a timeline
     const colors = [
         'rgba(0, 212, 255, 1)',
@@ -156,17 +152,17 @@ function updateNarrativeChart(narratives) {
         'rgba(255, 170, 0, 1)',
         'rgba(255, 71, 87, 1)'
     ];
-
+    
     const datasets = narratives.map((narrative, idx) => {
         const color = colors[idx % colors.length];
         const timeline = narrative.timeline || [];
-
+        
         // Create data points with confidence as Y value
         const dataPoints = timeline.map(day => ({
             x: day,
             y: narrative.confidence * (0.8 + Math.random() * 0.4) // Add some variance
         }));
-
+        
         return {
             label: narrative.name,
             data: dataPoints,
@@ -179,7 +175,7 @@ function updateNarrativeChart(narratives) {
             pointHoverRadius: 6
         };
     });
-
+    
     narrativeChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -243,7 +239,7 @@ function updateNarrativeChart(narratives) {
             }
         }
     });
-
+    
     // Update legend
     updateChartLegend(narratives, colors);
 }
@@ -345,9 +341,9 @@ function renderTimeline(narratives) {
             periods[day].push(n.name);
         });
     });
-
+    
     const sortedDays = Object.keys(periods).sort((a, b) => a - b);
-
+    
     elements.timelineContainer.innerHTML = sortedDays.map(day => `
         <div class="timeline-item">
             <div class="timeline-period">Day ${day}</div>
@@ -369,7 +365,7 @@ function renderSignals(narratives) {
         for (let i = 1; i <= maxDay; i++) {
             barHeights.push(timeline.includes(i) ? 30 + Math.random() * 30 : 5);
         }
-
+        
         return `
             <div class="signal-card">
                 <div class="signal-header">
@@ -398,7 +394,7 @@ function renderNoiseAnalysis(narratives, noise) {
             </div>
         </div>
     `).join('') || '<p style="color: var(--text-muted)">No valid narratives detected</p>';
-
+    
     // Discarded noise
     elements.discardedNoise.innerHTML = noise.map(item => `
         <div class="noise-item">
@@ -415,10 +411,7 @@ function renderNoiseAnalysis(narratives, noise) {
 function showNarrativeDetail(id) {
     const narrative = narrativesData?.narratives.find(n => n.id === id);
     if (!narrative) return;
-
-    // Compute DNA metrics
-    const dnaMetrics = computeNarrativeDNA(narrative);
-
+    
     elements.detailTitle.textContent = narrative.name;
     elements.detailContent.innerHTML = `
         <div class="detail-section">
@@ -429,9 +422,6 @@ function showNarrativeDetail(id) {
             </div>
             <p style="color: var(--text-secondary); line-height: 1.7;">${narrative.description}</p>
         </div>
-        
-        <!-- Narrative DNA Fingerprint -->
-        ${renderNarrativeDNA(narrative, dnaMetrics)}
         
         <div class="detail-section">
             <div class="detail-section-title">Lifecycle Stage</div>
@@ -499,161 +489,15 @@ function showNarrativeDetail(id) {
             </div>
         </div>
     `;
-
+    
     elements.detailPanel.classList.add('open');
-}
-
-// ============================================
-// Narrative DNA Visualization
-// ============================================
-
-/**
- * Compute derived DNA metrics from narrative data.
- * These metrics characterize the narrative's internal properties.
- * 
- * @param {Object} narrative - Narrative object from API
- * @returns {Object} DNA metrics: coherence, persistence, stability, velocity
- */
-function computeNarrativeDNA(narrative) {
-    const timeline = narrative.timeline || [];
-
-    // Coherence: Direct from API
-    const coherence = narrative.coherence;
-
-    // Persistence: Direct from API
-    const persistence = narrative.persistence;
-
-    // Stability: Derived from timeline smoothness
-    // Stable timeline = evenly distributed mentions
-    // Spiky timeline = clustered mentions
-    const stability = computeTimelineStability(timeline);
-
-    // Velocity: Derived from timeline trend
-    const velocity = computeTimelineVelocity(timeline);
-
-    return { coherence, persistence, stability, velocity };
-}
-
-/**
- * Compute timeline stability from variance.
- * Stability = 1 - normalized variance
- * 
- * @param {Array} timeline - Array of day numbers
- * @returns {number} Stability score (0-1)
- */
-function computeTimelineStability(timeline) {
-    if (!timeline || timeline.length < 2) {
-        return 0.5; // Default for insufficient data
-    }
-
-    // Calculate gaps between consecutive days
-    const sortedDays = [...timeline].sort((a, b) => a - b);
-    const gaps = [];
-    for (let i = 1; i < sortedDays.length; i++) {
-        gaps.push(sortedDays[i] - sortedDays[i - 1]);
-    }
-
-    if (gaps.length === 0) return 1.0;
-
-    // Calculate variance of gaps
-    const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-    const variance = gaps.reduce((sum, g) => sum + Math.pow(g - mean, 2), 0) / gaps.length;
-
-    // Normalize variance (assume max variance of 9 for 7-day window)
-    const normalizedVariance = Math.min(variance / 9, 1);
-
-    // Stability = 1 - variance (high variance = low stability)
-    return Math.max(0, 1 - normalizedVariance);
-}
-
-/**
- * Compute timeline velocity (trend direction).
- * Uses simple linear regression on timeline density.
- * 
- * @param {Array} timeline - Array of day numbers
- * @returns {Object} Velocity info: symbol, label, cssClass
- */
-function computeTimelineVelocity(timeline) {
-    if (!timeline || timeline.length < 2) {
-        return { symbol: '→', label: 'Stable', cssClass: 'stable' };
-    }
-
-    const sortedDays = [...timeline].sort((a, b) => a - b);
-    const minDay = sortedDays[0];
-    const maxDay = sortedDays[sortedDays.length - 1];
-    const midPoint = (minDay + maxDay) / 2;
-
-    // Count mentions in first half vs second half
-    const firstHalf = sortedDays.filter(d => d <= midPoint).length;
-    const secondHalf = sortedDays.filter(d => d > midPoint).length;
-
-    // Calculate trend ratio
-    const ratio = secondHalf / Math.max(firstHalf, 1);
-
-    if (ratio > 1.5) {
-        return { symbol: '↑↑', label: 'Rising Fast', cssClass: 'rising-fast' };
-    } else if (ratio > 1.1) {
-        return { symbol: '↑', label: 'Rising', cssClass: 'rising' };
-    } else if (ratio < 0.7) {
-        return { symbol: '↓', label: 'Declining', cssClass: 'declining' };
-    } else {
-        return { symbol: '→', label: 'Stable', cssClass: 'stable' };
-    }
-}
-
-/**
- * Render the Narrative DNA card HTML.
- * 
- * @param {Object} narrative - Narrative object
- * @param {Object} dna - Computed DNA metrics
- * @returns {string} HTML for DNA card
- */
-function renderNarrativeDNA(narrative, dna) {
-    return `
-        <div class="dna-card">
-            <div class="dna-header">
-                <span class="dna-icon">◈</span>
-                <span class="dna-title">Narrative DNA</span>
-            </div>
-            <div class="dna-metrics">
-                <div class="dna-row">
-                    <span class="dna-label">Coherence</span>
-                    <div class="dna-bar-container">
-                        <div class="dna-bar coherence" style="width: ${dna.coherence * 100}%"></div>
-                    </div>
-                    <span class="dna-value">${Math.round(dna.coherence * 100)}%</span>
-                </div>
-                <div class="dna-row">
-                    <span class="dna-label">Persistence</span>
-                    <div class="dna-bar-container">
-                        <div class="dna-bar persistence" style="width: ${dna.persistence * 100}%"></div>
-                    </div>
-                    <span class="dna-value">${Math.round(dna.persistence * 100)}%</span>
-                </div>
-                <div class="dna-row">
-                    <span class="dna-label">Stability</span>
-                    <div class="dna-bar-container">
-                        <div class="dna-bar stability" style="width: ${dna.stability * 100}%"></div>
-                    </div>
-                    <span class="dna-value">${Math.round(dna.stability * 100)}%</span>
-                </div>
-                <div class="dna-velocity-row">
-                    <span class="dna-label">Velocity</span>
-                    <span class="dna-velocity-value ${dna.velocity.cssClass}">
-                        ${dna.velocity.symbol} ${dna.velocity.label}
-                    </span>
-                </div>
-            </div>
-        </div>
-    `;
 }
 
 function getStageDescription(stage) {
     const descriptions = {
         'Early': 'This narrative is just emerging. Limited data points but showing initial patterns.',
         'Growth': 'The narrative is building momentum. Increasing mentions and strengthening coherence.',
-        'Acceleration': 'Mature narrative with widespread presence. High persistence across time periods.',
-        'Decay': 'This narrative is fading. Declining mentions and fragmenting coherence.'
+        'Acceleration': 'Mature narrative with widespread presence. High persistence across time periods.'
     };
     return descriptions[stage] || '';
 }
@@ -669,119 +513,22 @@ function closeDetailPanel() {
 function initNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.section');
-
+    
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-
+            
             const sectionId = item.dataset.section;
-
+            
             // Update nav
             navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
-
+            
             // Update sections
             sections.forEach(s => s.classList.remove('active'));
             document.getElementById(`${sectionId}-section`).classList.add('active');
         });
     });
-}
-
-// ============================================
-// Strategic Overview - Narrative Landscape
-// ============================================
-
-/**
- * Classify narratives into War Room zones.
- * Uses existing fields: stage, confidence, persistence
- * 
- * Classification logic:
- * - Dominant: (Growth/Acceleration) + high confidence (>0.6) + high persistence (>0.5)
- * - Fading: Decay stage OR low persistence (<0.4) OR low confidence (<0.4)
- * - Contested: Everything else (moderate signals, mixed lifecycle)
- */
-function classifyNarrativesForWarRoom(narratives) {
-    const dominant = [];
-    const contested = [];
-    const fading = [];
-
-    narratives.forEach(n => {
-        const stage = n.stage || 'Early';
-        const confidence = n.confidence || 0.5;
-        const persistence = n.persistence || 0.5;
-
-        // Fading: Decay stage, or weak signals
-        if (stage === 'Decay' || persistence < 0.4 || confidence < 0.4) {
-            fading.push(n);
-        }
-        // Dominant: Growth/Acceleration with strong signals
-        else if ((stage === 'Growth' || stage === 'Acceleration') &&
-            confidence >= 0.6 && persistence >= 0.5) {
-            dominant.push(n);
-        }
-        // Contested: Everything in between
-        else {
-            contested.push(n);
-        }
-    });
-
-    return { dominant, contested, fading };
-}
-
-/**
- * Render the War Room view with three intelligence zones.
- */
-function renderWarRoom(narratives) {
-    const zones = classifyNarrativesForWarRoom(narratives);
-
-    // Update counts
-    document.getElementById('dominantCount').textContent = zones.dominant.length;
-    document.getElementById('contestedCount').textContent = zones.contested.length;
-    document.getElementById('fadingCount').textContent = zones.fading.length;
-
-    // Render cards
-    document.getElementById('dominantNarratives').innerHTML =
-        renderWarRoomCards(zones.dominant, 'dominant');
-    document.getElementById('contestedNarratives').innerHTML =
-        renderWarRoomCards(zones.contested, 'contested');
-    document.getElementById('fadingNarratives').innerHTML =
-        renderWarRoomCards(zones.fading, 'fading');
-}
-
-/**
- * Render compact cards for a War Room zone.
- */
-function renderWarRoomCards(narratives, zoneType) {
-    if (narratives.length === 0) {
-        return `<div class="zone-empty">No narratives in this zone</div>`;
-    }
-
-    return narratives.map((n, idx) => {
-        const stageClass = (n.stage || 'early').toLowerCase();
-        const delay = idx * 0.05;
-
-        return `
-            <div class="warroom-card" 
-                 onclick="showNarrativeDetail('${n.id}')"
-                 style="animation-delay: ${delay}s">
-                <div class="warroom-card-header">
-                    <span class="warroom-card-name">${n.name}</span>
-                    <span class="warroom-card-stage stage-tag ${stageClass}">${n.stage}</span>
-                </div>
-                <div class="warroom-dna">
-                    <div class="warroom-dna-bar" title="Coherence: ${Math.round(n.coherence * 100)}%">
-                        <div class="warroom-dna-fill coherence" style="width: ${n.coherence * 100}%"></div>
-                    </div>
-                    <div class="warroom-dna-bar" title="Persistence: ${Math.round(n.persistence * 100)}%">
-                        <div class="warroom-dna-fill persistence" style="width: ${n.persistence * 100}%"></div>
-                    </div>
-                    <div class="warroom-dna-bar" title="Confidence: ${Math.round(n.confidence * 100)}%">
-                        <div class="warroom-dna-fill confidence" style="width: ${n.confidence * 100}%"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
 }
 
 // ============================================
@@ -807,8 +554,8 @@ function hideError() {
 
 function updateLastUpdated() {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', {
-        hour: '2-digit',
+    const timeStr = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
         minute: '2-digit',
         second: '2-digit'
     });
@@ -823,168 +570,13 @@ function initEventListeners() {
     elements.refreshBtn.addEventListener('click', fetchNarratives);
     elements.errorClose.addEventListener('click', hideError);
     elements.detailClose.addEventListener('click', closeDetailPanel);
-
+    
     // Close detail panel on escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeDetailPanel();
         }
     });
-
-    // Initialize explanation interface
-    initExplanationInterface();
-}
-
-// ============================================
-// Explanation Interface
-// ============================================
-
-function initExplanationInterface() {
-    const questionInput = document.getElementById('questionInput');
-    const askBtn = document.getElementById('askBtn');
-    const exampleBtns = document.querySelectorAll('.example-btn');
-    const interrogationBtns = document.querySelectorAll('.interrogation-btn');
-
-    if (!questionInput || !askBtn) return;
-
-    // Ask button click
-    askBtn.addEventListener('click', () => {
-        const question = questionInput.value.trim();
-        if (question) {
-            askQuestion(question);
-        }
-    });
-
-    // Enter key in input
-    questionInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const question = questionInput.value.trim();
-            if (question) {
-                askQuestion(question);
-            }
-        }
-    });
-
-    // Example question buttons
-    exampleBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const question = btn.dataset.question;
-            questionInput.value = question;
-            askQuestion(question);
-        });
-    });
-
-    // Interrogation mode buttons
-    // These are the exact questions a human analyst would ask
-    interrogationBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const question = btn.dataset.question;
-            questionInput.value = question;
-            askQuestion(question);
-        });
-    });
-}
-
-async function askQuestion(question) {
-    const responseContainer = document.getElementById('explanationResponse');
-    const askBtn = document.getElementById('askBtn');
-
-    // Show loading state
-    askBtn.disabled = true;
-    askBtn.textContent = 'Thinking...';
-    responseContainer.innerHTML = `
-        <div class="response-placeholder">
-            <div class="loading-spinner" style="width: 32px; height: 32px;"></div>
-            <span>Generating explanation...</span>
-        </div>
-    `;
-
-    try {
-        const response = await fetch(ENDPOINTS.explain, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ question })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        displayExplanation(data);
-
-    } catch (error) {
-        console.error('Failed to get explanation:', error);
-        responseContainer.innerHTML = `
-            <div class="unsupported-response">
-                <p style="color: var(--accent-danger);">
-                    Failed to get explanation: ${error.message}
-                </p>
-                <p style="color: var(--text-muted); margin-top: 8px;">
-                    Make sure the backend is running on ${API_BASE_URL}
-                </p>
-            </div>
-        `;
-    } finally {
-        askBtn.disabled = false;
-        askBtn.textContent = 'Ask';
-    }
-}
-
-function displayExplanation(data) {
-    const responseContainer = document.getElementById('explanationResponse');
-    const { question_type, explanation, is_supported } = data;
-
-    // Format the question type for display
-    const typeLabels = {
-        'narrative_explanation': 'Narrative Explanation',
-        'comparison': 'Comparison Analysis',
-        'noise_justification': 'Noise Justification',
-        'lifecycle_reasoning': 'Lifecycle Reasoning',
-        'unsupported': 'Unsupported Question'
-    };
-
-    const typeLabel = typeLabels[question_type] || question_type;
-
-    // Convert markdown-like formatting to HTML
-    const formattedExplanation = formatExplanation(explanation);
-
-    responseContainer.innerHTML = `
-        <div class="${is_supported ? '' : 'unsupported-response'}">
-            <span class="question-type-badge">${typeLabel}</span>
-            <div class="explanation-text">
-                ${formattedExplanation}
-            </div>
-        </div>
-    `;
-}
-
-function formatExplanation(text) {
-    // Simple markdown-like formatting
-    return text
-        // Bold
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        // Headers
-        .replace(/^### (.+)$/gm, '<h4>$1</h4>')
-        .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-        // Lists
-        .replace(/^- (.+)$/gm, '<li>$1</li>')
-        .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
-        // Tables (simple conversion)
-        .replace(/\|([^|]+)\|([^|]+)\|([^|]*)\|/g, (match, c1, c2, c3) => {
-            if (c1.includes('---')) return '';
-            return `<tr><td>${c1.trim()}</td><td>${c2.trim()}</td>${c3 ? `<td>${c3.trim()}</td>` : ''}</tr>`;
-        })
-        // Line breaks
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>')
-        // Wrap lists
-        .replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>')
-        // Wrap in paragraph
-        .replace(/^/, '<p>')
-        .replace(/$/, '</p>');
 }
 
 // ============================================

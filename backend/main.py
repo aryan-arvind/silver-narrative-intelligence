@@ -1,12 +1,6 @@
 """
 FastAPI backend for Narrative Detection Agent.
 Provides API endpoint for detecting and analyzing silver market narratives.
-
-ARCHITECTURE:
-    [Ingestion Layer] → [Embedding] → [Clustering] → [Analysis] → [API]
-    
-The ingestion layer is decoupled from the intelligence pipeline.
-Data source can be swapped without modifying downstream components.
 """
 
 from fastapi import FastAPI, HTTPException
@@ -14,30 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import time
-import os
-import json
 
-# =============================================================================
-# INGESTION LAYER - All data comes through here
-# =============================================================================
-from ingestion.source_adapter import get_source_adapter, Document
-
-# =============================================================================
-# INTELLIGENCE PIPELINE
-# =============================================================================
+from sample_data import SILVER_NEWS_DATA
 from embedding_service import get_embedding_service
 from clustering_service import get_clustering_service
 from narrative_analyzer import get_narrative_analyzer
-from explanation_service import get_explanation_service, classify_question
+from data_ingestion_service import get_ingestion_service
 
-# =============================================================================
-# CACHED DATA - For explanation service access
-# =============================================================================
-# The explanation service needs access to the latest narrative data.
-# This cache is updated whenever /api/narratives is called.
-_cached_narratives = []
-_cached_noise = []
-
+from explanation_service import get_explanation_service
 
 # Pydantic models for API response
 class NarrativeResponse(BaseModel):
@@ -65,6 +43,17 @@ class NarrativesAPIResponse(BaseModel):
     metadata: dict
 
 
+class ExplainRequest(BaseModel):
+    question: str
+
+
+class ExplainResponse(BaseModel):
+    question_type: str
+    explanation: str
+    is_supported: bool
+    data_points: dict
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Narrative Detection Agent API",
@@ -82,6 +71,11 @@ app.add_middleware(
 )
 
 
+# Global cache for latest analysis (in-memory for hackathon)
+_cached_narratives = []
+_cached_noise = []
+
+
 @app.get("/")
 async def root():
     """Health check endpoint."""
@@ -89,107 +83,68 @@ async def root():
 
 
 @app.get("/api/narratives", response_model=NarrativesAPIResponse)
-async def get_narratives():
+async def get_narratives(use_live_data: bool = True):
     """
     Main endpoint for narrative detection.
     
-    SNAPSHOT MODE (Default):
-    Loads pre-processed narratives from processed_narratives_snapshot.json
-    This ensures deterministic, explainable behavior for demos and evaluation.
+    Args:
+        use_live_data: If True, fetch real-time data from News API and Reddit.
+                      If False, use sample data.
     
-    LIVE MODE (Fallback):
-    If snapshot is not available, runs the full pipeline:
-    1. INGEST: Load documents via source adapter (API-agnostic)
-    2. EMBED: Generate sentence embeddings (SentenceTransformers)
-    3. CLUSTER: Group texts autonomously (HDBSCAN)
-    4. SCORE: Calculate coherence and persistence
-    5. CLASSIFY: Separate narratives from noise
-    6. STAGE: Assign lifecycle stages (Early/Growth/Acceleration/Decay)
+    Pipeline:
+    1. Load news data (live or sample)
+    2. Generate sentence embeddings
+    3. Cluster texts autonomously using HDBSCAN
+    4. Score clusters for coherence and persistence
+    5. Classify as narratives vs noise
+    6. Assign lifecycle stages
     
     Returns detected narratives and discarded noise.
     """
+    global _cached_narratives, _cached_noise
     start_time = time.time()
     
-    global _cached_narratives, _cached_noise
-    
-    # =================================================================
-    # TRY SNAPSHOT MODE FIRST - Deterministic for demos
-    # =================================================================
-    snapshot_path = os.path.join(
-        os.path.dirname(__file__), 
-        'data', 
-        'processed_narratives_snapshot.json'
-    )
-    
-    if os.path.exists(snapshot_path):
-        try:
-            with open(snapshot_path, 'r') as f:
-                snapshot = json.load(f)
-            
-            narratives = snapshot.get('narratives', [])
-            noise = snapshot.get('noise', [])
-            metadata = snapshot.get('metadata', {})
-            
-            # Update cache for explanation service
-            _cached_narratives = narratives
-            _cached_noise = noise
-            
-            processing_time = round(time.time() - start_time, 3)
-            
-            return NarrativesAPIResponse(
-                narratives=narratives,
-                noise=noise,
-                metadata={
-                    "total_documents": metadata.get("total_documents", 0),
-                    "clusters_found": len(narratives),
-                    "narratives_detected": len(narratives),
-                    "noise_discarded": len(noise),
-                    "processing_time_seconds": processing_time,
-                    "source": "processed_snapshot",
-                    "snapshot_generated": metadata.get("generated_at", "unknown")
-                }
-            )
-        except Exception as e:
-            # Fallback to live processing if snapshot fails
-            print(f"Snapshot load failed, falling back to live processing: {e}")
-    
-    # =================================================================
-    # FALLBACK: LIVE PROCESSING MODE
-    # =================================================================
     try:
-        # STEP 1: INGEST - Load documents through source adapter
-        adapter = get_source_adapter()
-        documents: List[Document] = adapter.get_documents()
+        # Step 1: Get data from live sources or sample data
+        if use_live_data:
+            ingestion_service = get_ingestion_service()
+            data = ingestion_service.fetch_all_sources()
+            data_source = "live"
+        else:
+            data = SILVER_NEWS_DATA
+            data_source = "sample"
         
-        texts = [doc.text for doc in documents]
-        timestamps = [doc.timestamp for doc in documents]
+        # Extract texts, timestamps, and sources
+        texts = [item["text"] for item in data]
+        timestamps = [item.get("timestamp", 1) for item in data]
+        sources = list(set(item.get("source", "Unknown") for item in data))
         
-        # STEP 2: EMBED - Generate sentence embeddings
+        # Step 2: Generate embeddings
         embedding_service = get_embedding_service()
         embeddings = embedding_service.encode(texts)
         
-        # STEP 3: CLUSTER - Autonomous grouping via HDBSCAN
+        # Step 3: Cluster texts autonomously
         clustering_service = get_clustering_service()
         labels = clustering_service.cluster(embeddings)
         
-        # STEP 4: SCORE - Coherence, persistence, temporal metrics
+        # Step 4: Get cluster information with coherence and persistence scores
         clusters, noise_texts = clustering_service.get_cluster_info(
             embeddings, labels, texts, timestamps
         )
         
-        # STEP 5 & 6: CLASSIFY + STAGE - Extract narrative intelligence
+        # Step 5 & 6: Analyze clusters - classify and stage
         analyzer = get_narrative_analyzer()
         narratives, classified_noise = analyzer.analyze_clusters(clusters)
         
-        # Add HDBSCAN outliers to noise
+        # Add noise from outliers (label=-1)
         if noise_texts:
             classified_noise.append({
                 "cluster_id": None,
                 "reason": "HDBSCAN outlier detection",
-                "texts": noise_texts[:3]
+                "texts": noise_texts[:3]  # Sample
             })
-        
-        # Update cache for explanation service
+            
+        # Update cache
         _cached_narratives = narratives
         _cached_noise = classified_noise
         
@@ -199,12 +154,13 @@ async def get_narratives():
             narratives=narratives,
             noise=classified_noise,
             metadata={
-                "total_documents": len(documents),
+                "total_documents": len(texts),
                 "clusters_found": len(clusters),
                 "narratives_detected": len(narratives),
                 "noise_discarded": len(classified_noise),
                 "processing_time_seconds": processing_time,
-                "source": adapter.default_source
+                "data_source": data_source,
+                "sources": sources
             }
         )
         
@@ -213,41 +169,6 @@ async def get_narratives():
             status_code=500,
             detail=f"Narrative detection pipeline failed: {str(e)}"
         )
-
-
-@app.get("/api/health")
-async def health_check():
-    """Detailed health check with service status."""
-    adapter = get_source_adapter()
-    return {
-        "status": "healthy",
-        "services": {
-            "ingestion": "ready",
-            "embedding": "ready",
-            "clustering": "ready",
-            "analyzer": "ready",
-            "explanation": "ready"
-        },
-        "data_source": adapter.default_source,
-        "available_sources": adapter.get_available_sources()
-    }
-
-
-# =============================================================================
-# EXPLANATION ENDPOINT - Interpretability layer
-# =============================================================================
-
-class ExplainRequest(BaseModel):
-    """Request payload for explanation endpoint."""
-    question: str
-
-
-class ExplainResponse(BaseModel):
-    """Response from explanation endpoint."""
-    question_type: str
-    explanation: str
-    is_supported: bool
-    data_points: dict
 
 
 @app.post("/api/explain", response_model=ExplainResponse)
@@ -305,6 +226,20 @@ async def explain_narrative(request: ExplainRequest):
             status_code=500,
             detail=f"Explanation generation failed: {str(e)}"
         )
+
+
+@app.get("/api/health")
+async def health_check():
+    """Detailed health check with service status."""
+    return {
+        "status": "healthy",
+        "services": {
+            "embedding": "ready",
+            "clustering": "ready",
+            "analyzer": "ready",
+            "explanation": "ready"
+        }
+    }
 
 
 if __name__ == "__main__":

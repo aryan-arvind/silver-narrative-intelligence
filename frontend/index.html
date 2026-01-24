@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Narrative Detection Agent | Silver Market Intelligence</title>
-    <meta name="description"
-        content="Autonomous pattern hunter for detecting and analyzing market narratives around silver">
+    <meta name="description" content="Autonomous pattern hunter for detecting and analyzing market narratives around silver">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
@@ -22,7 +19,7 @@
                     <span class="logo-subtitle">Narrative Agent</span>
                 </div>
             </div>
-
+            
             <nav class="nav-menu">
                 <a href="#" class="nav-item active" data-section="overview">
                     <span class="nav-icon">◉</span>
@@ -44,16 +41,8 @@
                     <span class="nav-icon">◇</span>
                     <span class="nav-text">Noise Analysis</span>
                 </a>
-                <a href="#" class="nav-item" data-section="warroom">
-                    <span class="nav-icon">⬡</span>
-                    <span class="nav-text">Strategic Overview</span>
-                </a>
-                <a href="#" class="nav-item" data-section="explain">
-                    <span class="nav-icon">?</span>
-                    <span class="nav-text">Explain</span>
-                </a>
             </nav>
-
+            
             <div class="sidebar-footer">
                 <div class="status-indicator">
                     <span class="status-dot"></span>
@@ -183,118 +172,6 @@
                 </div>
             </section>
 
-            <!-- Strategic Overview Section -->
-            <section id="warroom-section" class="section">
-                <div class="warroom-header">
-                    <h2 class="section-title">Strategic Overview</h2>
-                    <p class="warroom-subtitle">Narrative landscape: Which narratives are actionable right now?</p>
-                </div>
-
-                <div class="warroom-grid">
-                    <!-- Dominant Narratives Zone -->
-                    <div class="warroom-zone zone-dominant">
-                        <div class="zone-header">
-                            <span class="zone-icon">▲</span>
-                            <span class="zone-title">Dominant</span>
-                            <span class="zone-count" id="dominantCount">0</span>
-                        </div>
-                        <p class="zone-description">Strong, sustained narratives in Growth or Acceleration</p>
-                        <div class="zone-cards" id="dominantNarratives"></div>
-                    </div>
-
-                    <!-- Contested Narratives Zone -->
-                    <div class="warroom-zone zone-contested">
-                        <div class="zone-header">
-                            <span class="zone-icon">◆</span>
-                            <span class="zone-title">Contested</span>
-                            <span class="zone-count" id="contestedCount">0</span>
-                        </div>
-                        <p class="zone-description">Uncertain narratives with mixed signals</p>
-                        <div class="zone-cards" id="contestedNarratives"></div>
-                    </div>
-
-                    <!-- Fading Narratives Zone -->
-                    <div class="warroom-zone zone-fading">
-                        <div class="zone-header">
-                            <span class="zone-icon">▽</span>
-                            <span class="zone-title">Fading</span>
-                            <span class="zone-count" id="fadingCount">0</span>
-                        </div>
-                        <p class="zone-description">Weakening narratives losing relevance</p>
-                        <div class="zone-cards" id="fadingNarratives"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Explanation Section -->
-            <section id="explain-section" class="section">
-                <div class="explanation-container">
-                    <div class="explanation-header">
-                        <h2 class="section-title">Narrative Explanation Assistant</h2>
-                        <p class="explanation-subtitle">Ask questions about detected narratives and system decisions</p>
-                    </div>
-
-                    <div class="explanation-disclaimer">
-                        <span class="disclaimer-icon">ℹ</span>
-                        <span>This assistant explains system decisions. It does not generate predictions or investment
-                            advice.</span>
-                    </div>
-
-                    <div class="question-input-container">
-                        <input type="text" id="questionInput" class="question-input"
-                            placeholder="e.g., Why is Industrial Demand Surge marked as Acceleration?" />
-                        <button id="askBtn" class="ask-btn">Ask</button>
-                    </div>
-
-                    <!-- Analyst Interrogation Mode -->
-                    <div class="interrogation-panel">
-                        <div class="interrogation-header">
-                            <span class="interrogation-icon">◇</span>
-                            <span class="interrogation-label">Analyst Interrogation</span>
-                        </div>
-                        <div class="interrogation-buttons">
-                            <button class="interrogation-btn"
-                                data-question="Why is the strongest detected narrative classified as its current lifecycle stage?">
-                                Explain strongest narrative
-                            </button>
-                            <button class="interrogation-btn" data-question="Why was this signal discarded as noise?">
-                                Why was this discarded as noise?
-                            </button>
-                            <button class="interrogation-btn"
-                                data-question="Why is the strongest narrative stronger than the second strongest?">
-                                Compare top two narratives
-                            </button>
-                            <button class="interrogation-btn"
-                                data-question="What would make this narrative move to the next lifecycle stage?">
-                                What could change this narrative's lifecycle?
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="example-questions">
-                        <span class="example-label">Or try asking:</span>
-                        <button class="example-btn"
-                            data-question="Why is Industrial Demand Surge classified as Acceleration?">Stage
-                            explanation</button>
-                        <button class="example-btn"
-                            data-question="Compare Industrial Demand and Inflation Hedge narratives">Compare
-                            narratives</button>
-                        <button class="example-btn" data-question="Why was some content discarded as noise?">Noise
-                            justification</button>
-                        <button class="example-btn"
-                            data-question="What would make a narrative move to Acceleration?">Lifecycle
-                            reasoning</button>
-                    </div>
-
-                    <div class="explanation-response" id="explanationResponse">
-                        <div class="response-placeholder">
-                            <span class="placeholder-icon">◎</span>
-                            <span>Your explanation will appear here</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <!-- Narrative Detail Panel -->
             <div class="detail-panel" id="detailPanel">
                 <div class="detail-header">
@@ -308,5 +185,4 @@
 
     <script src="app.js"></script>
 </body>
-
 </html>
