@@ -7,7 +7,8 @@
 const API_BASE_URL = 'http://localhost:8000';
 const ENDPOINTS = {
     narratives: `${API_BASE_URL}/api/narratives`,
-    health: `${API_BASE_URL}/api/health`
+    health: `${API_BASE_URL}/api/health`,
+    explain: `${API_BASE_URL}/api/explain`
 };
 
 // State
@@ -22,25 +23,25 @@ const elements = {
     errorClose: document.getElementById('errorClose'),
     refreshBtn: document.getElementById('refreshBtn'),
     lastUpdated: document.getElementById('lastUpdated'),
-    
+
     // Stats
     activeNarratives: document.getElementById('activeNarratives'),
     marketBias: document.getElementById('marketBias'),
     biasIcon: document.getElementById('biasIcon'),
     narrativeVolatility: document.getElementById('narrativeVolatility'),
     signalConfidence: document.getElementById('signalConfidence'),
-    
+
     // Lists
     narrativesList: document.getElementById('narrativesList'),
     narrativesGrid: document.getElementById('narrativesGrid'),
     chartLegend: document.getElementById('chartLegend'),
-    
+
     // Sections
     timelineContainer: document.getElementById('timelineContainer'),
     signalsContainer: document.getElementById('signalsContainer'),
     validNarratives: document.getElementById('validNarratives'),
     discardedNoise: document.getElementById('discardedNoise'),
-    
+
     // Detail Panel
     detailPanel: document.getElementById('detailPanel'),
     detailTitle: document.getElementById('detailTitle'),
@@ -55,20 +56,20 @@ const elements = {
 async function fetchNarratives() {
     showLoading(true);
     hideError();
-    
+
     try {
         const response = await fetch(ENDPOINTS.narratives);
-        
+
         if (!response.ok) {
             throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         narrativesData = data;
-        
+
         updateDashboard(data);
         updateLastUpdated();
-        
+
     } catch (error) {
         console.error('Failed to fetch narratives:', error);
         showError(`Failed to connect to backend: ${error.message}. Make sure the API is running on ${API_BASE_URL}`);
@@ -83,25 +84,25 @@ async function fetchNarratives() {
 
 function updateDashboard(data) {
     const { narratives, noise, metadata } = data;
-    
+
     // Update stats cards
     updateStatsCards(narratives);
-    
+
     // Update narrative chart
     updateNarrativeChart(narratives);
-    
+
     // Update narratives list
     renderNarrativesList(narratives);
-    
+
     // Update full narratives grid
     renderNarrativesGrid(narratives);
-    
+
     // Update timeline
     renderTimeline(narratives);
-    
+
     // Update signals
     renderSignals(narratives);
-    
+
     // Update noise analysis
     renderNoiseAnalysis(narratives, noise);
 }
@@ -109,41 +110,41 @@ function updateDashboard(data) {
 function updateStatsCards(narratives) {
     // Active narratives count
     elements.activeNarratives.textContent = narratives.length;
-    
+
     // Market bias - aggregate sentiment
     const sentimentCounts = { Bullish: 0, Bearish: 0, Neutral: 0 };
     narratives.forEach(n => sentimentCounts[n.sentiment]++);
-    
+
     let bias = 'Neutral';
     if (sentimentCounts.Bullish > sentimentCounts.Bearish + sentimentCounts.Neutral) {
         bias = 'Bullish';
     } else if (sentimentCounts.Bearish > sentimentCounts.Bullish + sentimentCounts.Neutral) {
         bias = 'Bearish';
     }
-    
+
     elements.marketBias.textContent = bias;
-    elements.biasIcon.style.color = bias === 'Bullish' ? 'var(--bullish)' : 
-                                     bias === 'Bearish' ? 'var(--bearish)' : 'var(--neutral)';
-    
+    elements.biasIcon.style.color = bias === 'Bullish' ? 'var(--bullish)' :
+        bias === 'Bearish' ? 'var(--bearish)' : 'var(--neutral)';
+
     // Narrative volatility - variance in confidence scores
     const confidences = narratives.map(n => n.confidence);
     const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length || 0;
     const variance = confidences.reduce((sum, c) => sum + Math.pow(c - avgConfidence, 2), 0) / confidences.length || 0;
     const volatility = Math.min(Math.sqrt(variance) * 2, 1); // Normalize
     elements.narrativeVolatility.textContent = volatility < 0.3 ? 'Low' : volatility < 0.6 ? 'Medium' : 'High';
-    
+
     // Signal confidence - average confidence
     elements.signalConfidence.textContent = `${Math.round(avgConfidence * 100)}%`;
 }
 
 function updateNarrativeChart(narratives) {
     const ctx = document.getElementById('narrativeChart').getContext('2d');
-    
+
     // Destroy existing chart
     if (narrativeChart) {
         narrativeChart.destroy();
     }
-    
+
     // Prepare data - each narrative has a timeline
     const colors = [
         'rgba(0, 212, 255, 1)',
@@ -152,17 +153,17 @@ function updateNarrativeChart(narratives) {
         'rgba(255, 170, 0, 1)',
         'rgba(255, 71, 87, 1)'
     ];
-    
+
     const datasets = narratives.map((narrative, idx) => {
         const color = colors[idx % colors.length];
         const timeline = narrative.timeline || [];
-        
+
         // Create data points with confidence as Y value
         const dataPoints = timeline.map(day => ({
             x: day,
             y: narrative.confidence * (0.8 + Math.random() * 0.4) // Add some variance
         }));
-        
+
         return {
             label: narrative.name,
             data: dataPoints,
@@ -175,7 +176,7 @@ function updateNarrativeChart(narratives) {
             pointHoverRadius: 6
         };
     });
-    
+
     narrativeChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -239,7 +240,7 @@ function updateNarrativeChart(narratives) {
             }
         }
     });
-    
+
     // Update legend
     updateChartLegend(narratives, colors);
 }
@@ -341,9 +342,9 @@ function renderTimeline(narratives) {
             periods[day].push(n.name);
         });
     });
-    
+
     const sortedDays = Object.keys(periods).sort((a, b) => a - b);
-    
+
     elements.timelineContainer.innerHTML = sortedDays.map(day => `
         <div class="timeline-item">
             <div class="timeline-period">Day ${day}</div>
@@ -365,7 +366,7 @@ function renderSignals(narratives) {
         for (let i = 1; i <= maxDay; i++) {
             barHeights.push(timeline.includes(i) ? 30 + Math.random() * 30 : 5);
         }
-        
+
         return `
             <div class="signal-card">
                 <div class="signal-header">
@@ -394,7 +395,7 @@ function renderNoiseAnalysis(narratives, noise) {
             </div>
         </div>
     `).join('') || '<p style="color: var(--text-muted)">No valid narratives detected</p>';
-    
+
     // Discarded noise
     elements.discardedNoise.innerHTML = noise.map(item => `
         <div class="noise-item">
@@ -411,7 +412,7 @@ function renderNoiseAnalysis(narratives, noise) {
 function showNarrativeDetail(id) {
     const narrative = narrativesData?.narratives.find(n => n.id === id);
     if (!narrative) return;
-    
+
     elements.detailTitle.textContent = narrative.name;
     elements.detailContent.innerHTML = `
         <div class="detail-section">
@@ -489,7 +490,7 @@ function showNarrativeDetail(id) {
             </div>
         </div>
     `;
-    
+
     elements.detailPanel.classList.add('open');
 }
 
@@ -513,17 +514,17 @@ function closeDetailPanel() {
 function initNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.section');
-    
+
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-            
+
             const sectionId = item.dataset.section;
-            
+
             // Update nav
             navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
-            
+
             // Update sections
             sections.forEach(s => s.classList.remove('active'));
             document.getElementById(`${sectionId}-section`).classList.add('active');
@@ -554,8 +555,8 @@ function hideError() {
 
 function updateLastUpdated() {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
+    const timeStr = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
         minute: '2-digit',
         second: '2-digit'
     });
@@ -570,13 +571,157 @@ function initEventListeners() {
     elements.refreshBtn.addEventListener('click', fetchNarratives);
     elements.errorClose.addEventListener('click', hideError);
     elements.detailClose.addEventListener('click', closeDetailPanel);
-    
+
     // Close detail panel on escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeDetailPanel();
         }
     });
+
+    // Initialize explanation interface
+    initExplanationInterface();
+}
+
+// ============================================
+// Explanation Interface
+// ============================================
+
+function initExplanationInterface() {
+    const questionInput = document.getElementById('questionInput');
+    const askBtn = document.getElementById('askBtn');
+    const exampleBtns = document.querySelectorAll('.example-btn');
+
+    if (!questionInput || !askBtn) return;
+
+    // Ask button click
+    askBtn.addEventListener('click', () => {
+        const question = questionInput.value.trim();
+        if (question) {
+            askQuestion(question);
+        }
+    });
+
+    // Enter key in input
+    questionInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const question = questionInput.value.trim();
+            if (question) {
+                askQuestion(question);
+            }
+        }
+    });
+
+    // Example question buttons
+    exampleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const question = btn.dataset.question;
+            questionInput.value = question;
+            askQuestion(question);
+        });
+    });
+}
+
+async function askQuestion(question) {
+    const responseContainer = document.getElementById('explanationResponse');
+    const askBtn = document.getElementById('askBtn');
+
+    // Show loading state
+    askBtn.disabled = true;
+    askBtn.textContent = 'Thinking...';
+    responseContainer.innerHTML = `
+        <div class="response-placeholder">
+            <div class="loading-spinner" style="width: 32px; height: 32px;"></div>
+            <span>Generating explanation...</span>
+        </div>
+    `;
+
+    try {
+        const response = await fetch(ENDPOINTS.explain, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ question })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        displayExplanation(data);
+
+    } catch (error) {
+        console.error('Failed to get explanation:', error);
+        responseContainer.innerHTML = `
+            <div class="unsupported-response">
+                <p style="color: var(--accent-danger);">
+                    Failed to get explanation: ${error.message}
+                </p>
+                <p style="color: var(--text-muted); margin-top: 8px;">
+                    Make sure the backend is running on ${API_BASE_URL}
+                </p>
+            </div>
+        `;
+    } finally {
+        askBtn.disabled = false;
+        askBtn.textContent = 'Ask';
+    }
+}
+
+function displayExplanation(data) {
+    const responseContainer = document.getElementById('explanationResponse');
+    const { question_type, explanation, is_supported } = data;
+
+    // Format the question type for display
+    const typeLabels = {
+        'narrative_explanation': 'Narrative Explanation',
+        'comparison': 'Comparison Analysis',
+        'noise_justification': 'Noise Justification',
+        'lifecycle_reasoning': 'Lifecycle Reasoning',
+        'unsupported': 'Unsupported Question'
+    };
+
+    const typeLabel = typeLabels[question_type] || question_type;
+
+    // Convert markdown-like formatting to HTML
+    const formattedExplanation = formatExplanation(explanation);
+
+    responseContainer.innerHTML = `
+        <div class="${is_supported ? '' : 'unsupported-response'}">
+            <span class="question-type-badge">${typeLabel}</span>
+            <div class="explanation-text">
+                ${formattedExplanation}
+            </div>
+        </div>
+    `;
+}
+
+function formatExplanation(text) {
+    // Simple markdown-like formatting
+    return text
+        // Bold
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        // Headers
+        .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+        .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+        // Lists
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+        // Tables (simple conversion)
+        .replace(/\|([^|]+)\|([^|]+)\|([^|]*)\|/g, (match, c1, c2, c3) => {
+            if (c1.includes('---')) return '';
+            return `<tr><td>${c1.trim()}</td><td>${c2.trim()}</td>${c3 ? `<td>${c3.trim()}</td>` : ''}</tr>`;
+        })
+        // Line breaks
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        // Wrap lists
+        .replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>')
+        // Wrap in paragraph
+        .replace(/^/, '<p>')
+        .replace(/$/, '</p>');
 }
 
 // ============================================

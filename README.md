@@ -157,6 +157,34 @@ Stages are explicitly driven by temporal logic:
 
 ---
 
+## 💬 Narrative Explanation Interface
+
+The chatbot does not generate narratives or predictions. It explains and justifies the intelligence produced by the narrative detection system, providing transparency and interpretability.
+
+**Supported Questions:**
+
+| Type | Example |
+|------|---------|
+| Stage Explanation | "Why is Industrial Demand Surge marked as Acceleration?" |
+| Comparison | "Why is Inflation Hedge weaker than Industrial Demand?" |
+| Noise Justification | "Why was this discarded as noise?" |
+| Lifecycle Reasoning | "What would make this narrative move to Acceleration?" |
+
+**Endpoint:** `POST /api/explain`
+
+```json
+{
+  "question": "Why is Industrial Demand Surge classified as Acceleration?"
+}
+```
+
+**Forbidden:**
+- Price predictions
+- Investment advice
+- Questions outside silver market scope
+
+---
+
 ## 📝 Notes
 
 - No authentication required

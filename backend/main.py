@@ -26,6 +26,15 @@ from ingestion.source_adapter import get_source_adapter, Document
 from embedding_service import get_embedding_service
 from clustering_service import get_clustering_service
 from narrative_analyzer import get_narrative_analyzer
+from explanation_service import get_explanation_service, classify_question
+
+# =============================================================================
+# CACHED DATA - For explanation service access
+# =============================================================================
+# The explanation service needs access to the latest narrative data.
+# This cache is updated whenever /api/narratives is called.
+_cached_narratives = []
+_cached_noise = []
 
 
 # Pydantic models for API response
@@ -141,6 +150,13 @@ async def get_narratives():
                 "texts": noise_texts[:3]  # Sample for display
             })
         
+        # =================================================================
+        # CACHE UPDATE - For explanation service
+        # =================================================================
+        global _cached_narratives, _cached_noise
+        _cached_narratives = narratives
+        _cached_noise = classified_noise
+        
         processing_time = round(time.time() - start_time, 3)
         
         return NarrativesAPIResponse(
@@ -173,11 +189,86 @@ async def health_check():
             "ingestion": "ready",
             "embedding": "ready",
             "clustering": "ready",
-            "analyzer": "ready"
+            "analyzer": "ready",
+            "explanation": "ready"
         },
         "data_source": adapter.default_source,
         "available_sources": adapter.get_available_sources()
     }
+
+
+# =============================================================================
+# EXPLANATION ENDPOINT - Interpretability layer
+# =============================================================================
+
+class ExplainRequest(BaseModel):
+    """Request payload for explanation endpoint."""
+    question: str
+
+
+class ExplainResponse(BaseModel):
+    """Response from explanation endpoint."""
+    question_type: str
+    explanation: str
+    is_supported: bool
+    data_points: dict
+
+
+@app.post("/api/explain", response_model=ExplainResponse)
+async def explain_narrative(request: ExplainRequest):
+    """
+    Explain narrative detection system decisions.
+    
+    This endpoint provides interpretability for the narrative intelligence.
+    It does NOT generate new intelligence - only explains existing decisions.
+    
+    SUPPORTED QUESTION TYPES:
+    1. narrative_explanation - Why is X classified as Y stage?
+    2. comparison - Why is X stronger/weaker than Y?
+    3. noise_justification - Why was X discarded as noise?
+    4. lifecycle_reasoning - What would make X move to Y stage?
+    
+    FORBIDDEN:
+    - Price predictions
+    - Investment advice
+    - Questions outside silver market narratives
+    
+    Args:
+        request: Contains the user's question
+        
+    Returns:
+        Structured explanation with question type and supporting data
+    """
+    global _cached_narratives, _cached_noise
+    
+    # Ensure we have cached data
+    if not _cached_narratives:
+        # Trigger a narrative analysis first
+        await get_narratives()
+    
+    try:
+        # Get explanation service
+        explanation_service = get_explanation_service()
+        
+        # Generate explanation
+        result = explanation_service.explain(
+            question=request.question,
+            narratives=_cached_narratives,
+            noise=_cached_noise
+        )
+        
+        return ExplainResponse(
+            question_type=result.question_type,
+            explanation=result.explanation,
+            is_supported=result.is_supported,
+            data_points=result.data_points
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Explanation generation failed: {str(e)}"
+        )
 
 
 if __name__ == "__main__":
