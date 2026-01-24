@@ -1,6 +1,12 @@
 """
 FastAPI backend for Narrative Detection Agent.
 Provides API endpoint for detecting and analyzing silver market narratives.
+
+ARCHITECTURE:
+    [Ingestion Layer] → [Embedding] → [Clustering] → [Analysis] → [API]
+    
+The ingestion layer is decoupled from the intelligence pipeline.
+Data source can be swapped without modifying downstream components.
 """
 
 from fastapi import FastAPI, HTTPException
@@ -9,7 +15,14 @@ from pydantic import BaseModel
 from typing import List, Optional
 import time
 
-from sample_data import SILVER_NEWS_DATA
+# =============================================================================
+# INGESTION LAYER - All data comes through here
+# =============================================================================
+from ingestion.source_adapter import get_source_adapter, Document
+
+# =============================================================================
+# INTELLIGENCE PIPELINE
+# =============================================================================
 from embedding_service import get_embedding_service
 from clustering_service import get_clustering_service
 from narrative_analyzer import get_narrative_analyzer
@@ -70,45 +83,62 @@ async def get_narratives():
     Main endpoint for narrative detection.
     
     Pipeline:
-    1. Load sample news text
-    2. Generate sentence embeddings
-    3. Cluster texts autonomously using HDBSCAN
-    4. Score clusters for coherence and persistence
-    5. Classify as narratives vs noise
-    6. Assign lifecycle stages
+    1. INGEST: Load documents via source adapter (API-agnostic)
+    2. EMBED: Generate sentence embeddings (SentenceTransformers)
+    3. CLUSTER: Group texts autonomously (HDBSCAN)
+    4. SCORE: Calculate coherence and persistence
+    5. CLASSIFY: Separate narratives from noise
+    6. STAGE: Assign lifecycle stages (Early/Growth/Acceleration/Decay)
     
     Returns detected narratives and discarded noise.
     """
     start_time = time.time()
     
     try:
-        # Step 1: Extract texts and metadata from sample data
-        texts = [item["text"] for item in SILVER_NEWS_DATA]
-        timestamps = [item["timestamp"] for item in SILVER_NEWS_DATA]
+        # =================================================================
+        # STEP 1: INGEST - Load documents through source adapter
+        # =================================================================
+        # The adapter abstracts away the data source.
+        # Currently uses sample data; can be swapped to NewsAPI/RSS/Twitter
+        # without changing any code below this line.
+        adapter = get_source_adapter()
+        documents: List[Document] = adapter.get_documents()
         
-        # Step 2: Generate embeddings
+        # Extract texts and timestamps from standardized documents
+        texts = [doc.text for doc in documents]
+        timestamps = [doc.timestamp for doc in documents]
+        
+        # =================================================================
+        # STEP 2: EMBED - Generate sentence embeddings
+        # =================================================================
         embedding_service = get_embedding_service()
         embeddings = embedding_service.encode(texts)
         
-        # Step 3: Cluster texts autonomously
+        # =================================================================
+        # STEP 3: CLUSTER - Autonomous grouping via HDBSCAN
+        # =================================================================
         clustering_service = get_clustering_service()
         labels = clustering_service.cluster(embeddings)
         
-        # Step 4: Get cluster information with coherence and persistence scores
+        # =================================================================
+        # STEP 4: SCORE - Coherence, persistence, temporal metrics
+        # =================================================================
         clusters, noise_texts = clustering_service.get_cluster_info(
             embeddings, labels, texts, timestamps
         )
         
-        # Step 5 & 6: Analyze clusters - classify and stage
+        # =================================================================
+        # STEP 5 & 6: CLASSIFY + STAGE - Extract narrative intelligence
+        # =================================================================
         analyzer = get_narrative_analyzer()
         narratives, classified_noise = analyzer.analyze_clusters(clusters)
         
-        # Add noise from outliers (label=-1)
+        # Add HDBSCAN outliers to noise
         if noise_texts:
             classified_noise.append({
                 "cluster_id": None,
                 "reason": "HDBSCAN outlier detection",
-                "texts": noise_texts[:3]  # Sample
+                "texts": noise_texts[:3]  # Sample for display
             })
         
         processing_time = round(time.time() - start_time, 3)
@@ -117,11 +147,12 @@ async def get_narratives():
             narratives=narratives,
             noise=classified_noise,
             metadata={
-                "total_documents": len(texts),
+                "total_documents": len(documents),
                 "clusters_found": len(clusters),
                 "narratives_detected": len(narratives),
                 "noise_discarded": len(classified_noise),
-                "processing_time_seconds": processing_time
+                "processing_time_seconds": processing_time,
+                "source": adapter.default_source  # Show which source was used
             }
         )
         
@@ -135,13 +166,17 @@ async def get_narratives():
 @app.get("/api/health")
 async def health_check():
     """Detailed health check with service status."""
+    adapter = get_source_adapter()
     return {
         "status": "healthy",
         "services": {
+            "ingestion": "ready",
             "embedding": "ready",
             "clustering": "ready",
             "analyzer": "ready"
-        }
+        },
+        "data_source": adapter.default_source,
+        "available_sources": adapter.get_available_sources()
     }
 
 
