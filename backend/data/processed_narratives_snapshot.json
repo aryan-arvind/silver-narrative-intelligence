@@ -1,0 +1,120 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-24T14:01:34.541724+00:00",
+    "source_file": "raw_text_snapshot.json",
+    "total_documents": 24,
+    "narratives_detected": 6,
+    "noise_discarded": 0
+  },
+  "narratives": [
+    {
+      "id": "N1",
+      "name": "Inflation Hedge Rally",
+      "stage": "Growth",
+      "sentiment": "Bullish",
+      "confidence": 0.45,
+      "coherence": 0.37,
+      "persistence": 0.67,
+      "timeline": [
+        1,
+        6
+      ],
+      "sources": [
+        "News"
+      ],
+      "description": "Macro-economic conditions including inflation fears and monetary policy shifts are driving safe-haven flows into silver as a store of value."
+    },
+    {
+      "id": "N2",
+      "name": "Medical Applications Growth",
+      "stage": "Acceleration",
+      "sentiment": "Neutral",
+      "confidence": 0.67,
+      "coherence": 0.67,
+      "persistence": 1.0,
+      "timeline": [
+        1,
+        2,
+        3
+      ],
+      "sources": [
+        "News"
+      ],
+      "description": "Emerging applications of silver in medical devices and healthcare settings highlight novel demand drivers for the precious metal."
+    },
+    {
+      "id": "N3",
+      "name": "Industrial Demand Surge",
+      "stage": "Growth",
+      "sentiment": "Bullish",
+      "confidence": 0.48,
+      "coherence": 0.46,
+      "persistence": 0.67,
+      "timeline": [
+        1,
+        3
+      ],
+      "sources": [
+        "News"
+      ],
+      "description": "Rising industrial demand for silver driven by green energy, semiconductors, and technology manufacturing is creating sustained bullish pressure on prices."
+    },
+    {
+      "id": "N4",
+      "name": "Inflation Hedge Rally",
+      "stage": "Acceleration",
+      "sentiment": "Bullish",
+      "confidence": 0.76,
+      "coherence": 0.61,
+      "persistence": 1.0,
+      "timeline": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "sources": [
+        "News"
+      ],
+      "description": "Macro-economic conditions including inflation fears and monetary policy shifts are driving safe-haven flows into silver as a store of value."
+    },
+    {
+      "id": "N5",
+      "name": "Industrial Demand Surge",
+      "stage": "Acceleration",
+      "sentiment": "Bullish",
+      "confidence": 0.79,
+      "coherence": 0.58,
+      "persistence": 1.0,
+      "timeline": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "sources": [
+        "News"
+      ],
+      "description": "Rising industrial demand for silver driven by green energy, semiconductors, and technology manufacturing is creating sustained bullish pressure on prices."
+    },
+    {
+      "id": "N6",
+      "name": "Supply Constraint Pressure",
+      "stage": "Growth",
+      "sentiment": "Bullish",
+      "confidence": 0.62,
+      "coherence": 0.59,
+      "persistence": 0.67,
+      "timeline": [
+        1,
+        3
+      ],
+      "sources": [
+        "News"
+      ],
+      "description": "Global silver supply faces headwinds from mining disruptions, declining ore grades, and production constraints across major producing regions."
+    }
+  ],
+  "noise": []
+}

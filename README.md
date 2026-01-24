@@ -57,6 +57,29 @@ The ingestion layer is **API-agnostic** and can be swapped with live news feeds 
 
 ---
 
+## 📊 Processed Narrative Snapshot
+
+The system operates on **processed narrative snapshots** derived from real textual data. We freeze data during evaluation to ensure deterministic and explainable behavior, while keeping the ingestion layer compatible with live streams.
+
+```
+backend/data/
+├── raw_text_snapshot.json           # Real silver market text samples
+└── processed_narratives_snapshot.json  # Derived intelligence (auto-generated)
+
+backend/scripts/
+└── generate_snapshot.py             # Pipeline snapshot generator
+```
+
+**Regenerate Snapshot:**
+```bash
+cd backend
+python scripts/generate_snapshot.py
+```
+
+This processes raw text through embedding → clustering → scoring → analysis and outputs frozen narrative intelligence.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites

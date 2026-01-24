@@ -1,0 +1,146 @@
+[
+  {
+    "id": "txt_001",
+    "timestamp": "2026-01-24T09:00:00Z",
+    "source": "Reuters",
+    "text": "Solar panel manufacturers are ramping up production across Asia, driving unprecedented demand for silver in photovoltaic cells. Industry analysts project a 15% year-over-year increase in silver consumption for solar applications."
+  },
+  {
+    "id": "txt_002",
+    "timestamp": "2026-01-23T14:30:00Z",
+    "source": "Bloomberg",
+    "text": "Electric vehicle battery technology increasingly relies on silver components for enhanced conductivity. Major automakers report supply chain constraints as industrial silver consumption reaches decade highs."
+  },
+  {
+    "id": "txt_003",
+    "timestamp": "2026-01-22T11:15:00Z",
+    "source": "Mining Weekly",
+    "text": "5G infrastructure deployment accelerates globally, with silver paste demand for electronics reaching new highs. Semiconductor manufacturers are competing for limited silver supplies as chip production ramps up."
+  },
+  {
+    "id": "txt_004",
+    "timestamp": "2026-01-21T16:45:00Z",
+    "source": "Financial Times",
+    "text": "Green energy transition is creating a structural shift in silver industrial demand patterns. Analysts note that renewable energy applications now account for over 20% of annual silver consumption."
+  },
+  {
+    "id": "txt_005",
+    "timestamp": "2026-01-20T08:00:00Z",
+    "source": "CNBC",
+    "text": "Semiconductor shortage has silver component suppliers struggling to meet manufacturing needs. Tech sector expansion continues to drive industrial demand for the precious metal."
+  },
+  {
+    "id": "txt_006",
+    "timestamp": "2026-01-19T13:20:00Z",
+    "source": "WSJ",
+    "text": "Industrial silver consumption hits decade high as tech sector expansion continues. Manufacturing indices show strong correlation with silver demand in electronics and green energy sectors."
+  },
+  {
+    "id": "txt_007",
+    "timestamp": "2026-01-24T10:30:00Z",
+    "source": "Reuters",
+    "text": "Central banks worldwide signal continued monetary easing, investors turn to silver as inflation hedge. Safe-haven flows into precious metals accelerate amid currency debasement concerns."
+  },
+  {
+    "id": "txt_008",
+    "timestamp": "2026-01-23T15:00:00Z",
+    "source": "Bloomberg",
+    "text": "Dollar weakness accelerates precious metals rally, silver outperforms gold in safe-haven flows. Institutional investors increase allocation to physical silver ETFs."
+  },
+  {
+    "id": "txt_009",
+    "timestamp": "2026-01-22T09:45:00Z",
+    "source": "FT",
+    "text": "Inflation expectations rise sharply, institutional investors increase silver portfolio allocation. Real yields turn negative, boosting attractiveness of non-yielding assets like silver."
+  },
+  {
+    "id": "txt_010",
+    "timestamp": "2026-01-21T14:00:00Z",
+    "source": "CNBC",
+    "text": "Currency debasement fears drive retail investors into physical silver ETFs. Mint sales of silver coins reach multi-year highs as inflation hedging behavior intensifies."
+  },
+  {
+    "id": "txt_011",
+    "timestamp": "2026-01-20T11:30:00Z",
+    "source": "Kitco",
+    "text": "Federal Reserve policy uncertainty supports silver prices. Precious metals traders position for continued monetary accommodation."
+  },
+  {
+    "id": "txt_012",
+    "timestamp": "2026-01-23T08:15:00Z",
+    "source": "Mining.com",
+    "text": "Major silver mining operations in Mexico face disruption due to labor disputes. Production halts at key mines impact global supply estimates."
+  },
+  {
+    "id": "txt_013",
+    "timestamp": "2026-01-22T16:00:00Z",
+    "source": "Reuters",
+    "text": "Peru mining output declines amid regulatory challenges, impacting global silver supply. Environmental regulations and community disputes delay new project development."
+  },
+  {
+    "id": "txt_014",
+    "timestamp": "2026-01-21T10:00:00Z",
+    "source": "Silver Institute",
+    "text": "Primary silver mine production continues multi-year decline as ore grades deteriorate. Industry reports indicate average ore grades have fallen 25% over the past decade."
+  },
+  {
+    "id": "txt_015",
+    "timestamp": "2026-01-20T15:30:00Z",
+    "source": "Metals Focus",
+    "text": "Scrap silver recycling rates fall short of bridging the supply-demand gap. Secondary supply unable to compensate for primary production constraints."
+  },
+  {
+    "id": "txt_016",
+    "timestamp": "2026-01-24T12:00:00Z",
+    "source": "MarketWatch",
+    "text": "Weather patterns affecting agricultural commodities show seasonal variations. Corn and soybean futures trade mixed on USDA report data."
+  },
+  {
+    "id": "txt_017",
+    "timestamp": "2026-01-23T09:00:00Z",
+    "source": "CoinDesk",
+    "text": "Cryptocurrency markets experience volatility amid regulatory uncertainty. Bitcoin and Ethereum show divergent price action as institutional adoption varies."
+  },
+  {
+    "id": "txt_018",
+    "timestamp": "2026-01-22T14:30:00Z",
+    "source": "TechCrunch",
+    "text": "Tech stocks rally on strong earnings reports from major companies. FAANG stocks lead market gains as cloud computing demand accelerates."
+  },
+  {
+    "id": "txt_019",
+    "timestamp": "2026-01-21T11:45:00Z",
+    "source": "Oil Price",
+    "text": "Oil prices fluctuate as OPEC discusses production quotas. Energy sector volatility persists amid supply uncertainty and demand projections."
+  },
+  {
+    "id": "txt_020",
+    "timestamp": "2026-01-20T16:15:00Z",
+    "source": "Realtor",
+    "text": "Housing market shows mixed signals in different metropolitan areas. Mortgage rates and inventory levels drive regional price variations."
+  },
+  {
+    "id": "txt_021",
+    "timestamp": "2026-01-24T11:00:00Z",
+    "source": "MedTech",
+    "text": "New research highlights silver nanoparticles' antimicrobial properties in medical devices. Hospital trials show significant infection reduction with silver-coated implants."
+  },
+  {
+    "id": "txt_022",
+    "timestamp": "2026-01-23T13:45:00Z",
+    "source": "Healthcare Daily",
+    "text": "Healthcare sector explores silver-based coatings for infection prevention. Medical device manufacturers report growing demand for antimicrobial solutions."
+  },
+  {
+    "id": "txt_023",
+    "timestamp": "2026-01-22T10:30:00Z",
+    "source": "Nature Medicine",
+    "text": "Silver nanoparticle research advances in wound healing applications. Clinical studies demonstrate accelerated tissue regeneration with silver-based treatments."
+  },
+  {
+    "id": "txt_024",
+    "timestamp": "2026-01-19T09:00:00Z",
+    "source": "AP News",
+    "text": "Consumer sentiment index releases show expected seasonal patterns. Retail spending projections remain stable despite inflation concerns."
+  }
+]

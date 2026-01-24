@@ -14,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import time
+import os
+import json
 
 # =============================================================================
 # INGESTION LAYER - All data comes through here
@@ -91,7 +93,12 @@ async def get_narratives():
     """
     Main endpoint for narrative detection.
     
-    Pipeline:
+    SNAPSHOT MODE (Default):
+    Loads pre-processed narratives from processed_narratives_snapshot.json
+    This ensures deterministic, explainable behavior for demos and evaluation.
+    
+    LIVE MODE (Fallback):
+    If snapshot is not available, runs the full pipeline:
     1. INGEST: Load documents via source adapter (API-agnostic)
     2. EMBED: Generate sentence embeddings (SentenceTransformers)
     3. CLUSTER: Group texts autonomously (HDBSCAN)
@@ -103,42 +110,74 @@ async def get_narratives():
     """
     start_time = time.time()
     
+    global _cached_narratives, _cached_noise
+    
+    # =================================================================
+    # TRY SNAPSHOT MODE FIRST - Deterministic for demos
+    # =================================================================
+    snapshot_path = os.path.join(
+        os.path.dirname(__file__), 
+        'data', 
+        'processed_narratives_snapshot.json'
+    )
+    
+    if os.path.exists(snapshot_path):
+        try:
+            with open(snapshot_path, 'r') as f:
+                snapshot = json.load(f)
+            
+            narratives = snapshot.get('narratives', [])
+            noise = snapshot.get('noise', [])
+            metadata = snapshot.get('metadata', {})
+            
+            # Update cache for explanation service
+            _cached_narratives = narratives
+            _cached_noise = noise
+            
+            processing_time = round(time.time() - start_time, 3)
+            
+            return NarrativesAPIResponse(
+                narratives=narratives,
+                noise=noise,
+                metadata={
+                    "total_documents": metadata.get("total_documents", 0),
+                    "clusters_found": len(narratives),
+                    "narratives_detected": len(narratives),
+                    "noise_discarded": len(noise),
+                    "processing_time_seconds": processing_time,
+                    "source": "processed_snapshot",
+                    "snapshot_generated": metadata.get("generated_at", "unknown")
+                }
+            )
+        except Exception as e:
+            # Fallback to live processing if snapshot fails
+            print(f"Snapshot load failed, falling back to live processing: {e}")
+    
+    # =================================================================
+    # FALLBACK: LIVE PROCESSING MODE
+    # =================================================================
     try:
-        # =================================================================
         # STEP 1: INGEST - Load documents through source adapter
-        # =================================================================
-        # The adapter abstracts away the data source.
-        # Currently uses sample data; can be swapped to NewsAPI/RSS/Twitter
-        # without changing any code below this line.
         adapter = get_source_adapter()
         documents: List[Document] = adapter.get_documents()
         
-        # Extract texts and timestamps from standardized documents
         texts = [doc.text for doc in documents]
         timestamps = [doc.timestamp for doc in documents]
         
-        # =================================================================
         # STEP 2: EMBED - Generate sentence embeddings
-        # =================================================================
         embedding_service = get_embedding_service()
         embeddings = embedding_service.encode(texts)
         
-        # =================================================================
         # STEP 3: CLUSTER - Autonomous grouping via HDBSCAN
-        # =================================================================
         clustering_service = get_clustering_service()
         labels = clustering_service.cluster(embeddings)
         
-        # =================================================================
         # STEP 4: SCORE - Coherence, persistence, temporal metrics
-        # =================================================================
         clusters, noise_texts = clustering_service.get_cluster_info(
             embeddings, labels, texts, timestamps
         )
         
-        # =================================================================
         # STEP 5 & 6: CLASSIFY + STAGE - Extract narrative intelligence
-        # =================================================================
         analyzer = get_narrative_analyzer()
         narratives, classified_noise = analyzer.analyze_clusters(clusters)
         
@@ -147,13 +186,10 @@ async def get_narratives():
             classified_noise.append({
                 "cluster_id": None,
                 "reason": "HDBSCAN outlier detection",
-                "texts": noise_texts[:3]  # Sample for display
+                "texts": noise_texts[:3]
             })
         
-        # =================================================================
-        # CACHE UPDATE - For explanation service
-        # =================================================================
-        global _cached_narratives, _cached_noise
+        # Update cache for explanation service
         _cached_narratives = narratives
         _cached_noise = classified_noise
         
@@ -168,7 +204,7 @@ async def get_narratives():
                 "narratives_detected": len(narratives),
                 "noise_discarded": len(classified_noise),
                 "processing_time_seconds": processing_time,
-                "source": adapter.default_source  # Show which source was used
+                "source": adapter.default_source
             }
         )
         
