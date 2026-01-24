@@ -413,6 +413,9 @@ function showNarrativeDetail(id) {
     const narrative = narrativesData?.narratives.find(n => n.id === id);
     if (!narrative) return;
 
+    // Compute DNA metrics
+    const dnaMetrics = computeNarrativeDNA(narrative);
+
     elements.detailTitle.textContent = narrative.name;
     elements.detailContent.innerHTML = `
         <div class="detail-section">
@@ -423,6 +426,9 @@ function showNarrativeDetail(id) {
             </div>
             <p style="color: var(--text-secondary); line-height: 1.7;">${narrative.description}</p>
         </div>
+        
+        <!-- Narrative DNA Fingerprint -->
+        ${renderNarrativeDNA(narrative, dnaMetrics)}
         
         <div class="detail-section">
             <div class="detail-section-title">Lifecycle Stage</div>
@@ -494,11 +500,157 @@ function showNarrativeDetail(id) {
     elements.detailPanel.classList.add('open');
 }
 
+// ============================================
+// Narrative DNA Visualization
+// ============================================
+
+/**
+ * Compute derived DNA metrics from narrative data.
+ * These metrics characterize the narrative's internal properties.
+ * 
+ * @param {Object} narrative - Narrative object from API
+ * @returns {Object} DNA metrics: coherence, persistence, stability, velocity
+ */
+function computeNarrativeDNA(narrative) {
+    const timeline = narrative.timeline || [];
+
+    // Coherence: Direct from API
+    const coherence = narrative.coherence;
+
+    // Persistence: Direct from API
+    const persistence = narrative.persistence;
+
+    // Stability: Derived from timeline smoothness
+    // Stable timeline = evenly distributed mentions
+    // Spiky timeline = clustered mentions
+    const stability = computeTimelineStability(timeline);
+
+    // Velocity: Derived from timeline trend
+    const velocity = computeTimelineVelocity(timeline);
+
+    return { coherence, persistence, stability, velocity };
+}
+
+/**
+ * Compute timeline stability from variance.
+ * Stability = 1 - normalized variance
+ * 
+ * @param {Array} timeline - Array of day numbers
+ * @returns {number} Stability score (0-1)
+ */
+function computeTimelineStability(timeline) {
+    if (!timeline || timeline.length < 2) {
+        return 0.5; // Default for insufficient data
+    }
+
+    // Calculate gaps between consecutive days
+    const sortedDays = [...timeline].sort((a, b) => a - b);
+    const gaps = [];
+    for (let i = 1; i < sortedDays.length; i++) {
+        gaps.push(sortedDays[i] - sortedDays[i - 1]);
+    }
+
+    if (gaps.length === 0) return 1.0;
+
+    // Calculate variance of gaps
+    const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    const variance = gaps.reduce((sum, g) => sum + Math.pow(g - mean, 2), 0) / gaps.length;
+
+    // Normalize variance (assume max variance of 9 for 7-day window)
+    const normalizedVariance = Math.min(variance / 9, 1);
+
+    // Stability = 1 - variance (high variance = low stability)
+    return Math.max(0, 1 - normalizedVariance);
+}
+
+/**
+ * Compute timeline velocity (trend direction).
+ * Uses simple linear regression on timeline density.
+ * 
+ * @param {Array} timeline - Array of day numbers
+ * @returns {Object} Velocity info: symbol, label, cssClass
+ */
+function computeTimelineVelocity(timeline) {
+    if (!timeline || timeline.length < 2) {
+        return { symbol: '→', label: 'Stable', cssClass: 'stable' };
+    }
+
+    const sortedDays = [...timeline].sort((a, b) => a - b);
+    const minDay = sortedDays[0];
+    const maxDay = sortedDays[sortedDays.length - 1];
+    const midPoint = (minDay + maxDay) / 2;
+
+    // Count mentions in first half vs second half
+    const firstHalf = sortedDays.filter(d => d <= midPoint).length;
+    const secondHalf = sortedDays.filter(d => d > midPoint).length;
+
+    // Calculate trend ratio
+    const ratio = secondHalf / Math.max(firstHalf, 1);
+
+    if (ratio > 1.5) {
+        return { symbol: '↑↑', label: 'Rising Fast', cssClass: 'rising-fast' };
+    } else if (ratio > 1.1) {
+        return { symbol: '↑', label: 'Rising', cssClass: 'rising' };
+    } else if (ratio < 0.7) {
+        return { symbol: '↓', label: 'Declining', cssClass: 'declining' };
+    } else {
+        return { symbol: '→', label: 'Stable', cssClass: 'stable' };
+    }
+}
+
+/**
+ * Render the Narrative DNA card HTML.
+ * 
+ * @param {Object} narrative - Narrative object
+ * @param {Object} dna - Computed DNA metrics
+ * @returns {string} HTML for DNA card
+ */
+function renderNarrativeDNA(narrative, dna) {
+    return `
+        <div class="dna-card">
+            <div class="dna-header">
+                <span class="dna-icon">◈</span>
+                <span class="dna-title">Narrative DNA</span>
+            </div>
+            <div class="dna-metrics">
+                <div class="dna-row">
+                    <span class="dna-label">Coherence</span>
+                    <div class="dna-bar-container">
+                        <div class="dna-bar coherence" style="width: ${dna.coherence * 100}%"></div>
+                    </div>
+                    <span class="dna-value">${Math.round(dna.coherence * 100)}%</span>
+                </div>
+                <div class="dna-row">
+                    <span class="dna-label">Persistence</span>
+                    <div class="dna-bar-container">
+                        <div class="dna-bar persistence" style="width: ${dna.persistence * 100}%"></div>
+                    </div>
+                    <span class="dna-value">${Math.round(dna.persistence * 100)}%</span>
+                </div>
+                <div class="dna-row">
+                    <span class="dna-label">Stability</span>
+                    <div class="dna-bar-container">
+                        <div class="dna-bar stability" style="width: ${dna.stability * 100}%"></div>
+                    </div>
+                    <span class="dna-value">${Math.round(dna.stability * 100)}%</span>
+                </div>
+                <div class="dna-velocity-row">
+                    <span class="dna-label">Velocity</span>
+                    <span class="dna-velocity-value ${dna.velocity.cssClass}">
+                        ${dna.velocity.symbol} ${dna.velocity.label}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function getStageDescription(stage) {
     const descriptions = {
         'Early': 'This narrative is just emerging. Limited data points but showing initial patterns.',
         'Growth': 'The narrative is building momentum. Increasing mentions and strengthening coherence.',
-        'Acceleration': 'Mature narrative with widespread presence. High persistence across time periods.'
+        'Acceleration': 'Mature narrative with widespread presence. High persistence across time periods.',
+        'Decay': 'This narrative is fading. Declining mentions and fragmenting coherence.'
     };
     return descriptions[stage] || '';
 }
@@ -591,6 +743,7 @@ function initExplanationInterface() {
     const questionInput = document.getElementById('questionInput');
     const askBtn = document.getElementById('askBtn');
     const exampleBtns = document.querySelectorAll('.example-btn');
+    const interrogationBtns = document.querySelectorAll('.interrogation-btn');
 
     if (!questionInput || !askBtn) return;
 
@@ -614,6 +767,16 @@ function initExplanationInterface() {
 
     // Example question buttons
     exampleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const question = btn.dataset.question;
+            questionInput.value = question;
+            askQuestion(question);
+        });
+    });
+
+    // Interrogation mode buttons
+    // These are the exact questions a human analyst would ask
+    interrogationBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const question = btn.dataset.question;
             questionInput.value = question;

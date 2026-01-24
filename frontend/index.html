@@ -199,8 +199,33 @@
                         <button id="askBtn" class="ask-btn">Ask</button>
                     </div>
 
+                    <!-- Analyst Interrogation Mode -->
+                    <div class="interrogation-panel">
+                        <div class="interrogation-header">
+                            <span class="interrogation-icon">◇</span>
+                            <span class="interrogation-label">Analyst Interrogation</span>
+                        </div>
+                        <div class="interrogation-buttons">
+                            <button class="interrogation-btn"
+                                data-question="Why is the strongest detected narrative classified as its current lifecycle stage?">
+                                Explain strongest narrative
+                            </button>
+                            <button class="interrogation-btn" data-question="Why was this signal discarded as noise?">
+                                Why was this discarded as noise?
+                            </button>
+                            <button class="interrogation-btn"
+                                data-question="Why is the strongest narrative stronger than the second strongest?">
+                                Compare top two narratives
+                            </button>
+                            <button class="interrogation-btn"
+                                data-question="What would make this narrative move to the next lifecycle stage?">
+                                What could change this narrative's lifecycle?
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="example-questions">
-                        <span class="example-label">Try asking:</span>
+                        <span class="example-label">Or try asking:</span>
                         <button class="example-btn"
                             data-question="Why is Industrial Demand Surge classified as Acceleration?">Stage
                             explanation</button>

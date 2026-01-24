@@ -597,12 +597,27 @@ body {
     color: var(--neutral);
 }
 
-/* Stage Tags */
+/* Stage Tags - With Lifecycle Animations */
 .stage-tag {
     padding: 2px 8px;
     border-radius: var(--radius-sm);
     font-size: 0.75rem;
     font-weight: 500;
+    /* Lifecycle transition animation */
+    transition: all 0.4s ease-out;
+    animation: stageAppear 0.5s ease-out;
+}
+
+@keyframes stageAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .stage-tag.early {
@@ -613,11 +628,24 @@ body {
 .stage-tag.growth {
     background: rgba(0, 212, 255, 0.2);
     color: var(--accent-primary);
+    /* Slight emphasis for growing narratives */
+    transform: scale(1.02);
 }
 
 .stage-tag.acceleration {
     background: rgba(0, 255, 136, 0.2);
     color: var(--bullish);
+    /* Strong presence for accelerating narratives */
+    transform: scale(1.05);
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
+}
+
+/* Decay state - Visual weakening cues */
+.stage-tag.decay {
+    background: rgba(255, 170, 0, 0.15);
+    color: var(--accent-warning);
+    opacity: 0.8;
+    transform: scale(0.98);
 }
 
 /* ========================================
@@ -690,11 +718,29 @@ body {
 .bar-fill {
     height: 100%;
     border-radius: var(--radius-sm);
-    transition: width var(--transition-slow);
+    /* Narrative strength animation - slides in smoothly */
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: barFillIn 0.8s ease-out;
+}
+
+@keyframes barFillIn {
+    from {
+        width: 0;
+        opacity: 0.5;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .bar-fill.confidence {
     background: var(--gradient-primary);
+}
+
+/* High confidence = visually "heavier" */
+.bar-fill.confidence.high {
+    box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
 }
 
 .bar-fill.coherence {
@@ -710,6 +756,18 @@ body {
     text-align: right;
     font-family: var(--font-mono);
     font-size: 0.85rem;
+    /* Fade in with bar */
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .narrative-description {
@@ -906,7 +964,7 @@ body {
 }
 
 /* ========================================
-   DETAIL PANEL
+   DETAIL PANEL - With Lifecycle Animations
    ======================================== */
 .detail-panel {
     position: fixed;
@@ -917,13 +975,51 @@ body {
     background: var(--bg-secondary);
     border-left: 1px solid var(--border-color);
     z-index: 200;
-    transition: right var(--transition-normal);
+    /* Smooth slide-in transition */
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
 }
 
 .detail-panel.open {
     right: 0;
+}
+
+/* Content sections stagger animation */
+.detail-panel.open .detail-section {
+    animation: sectionSlideIn 0.4s ease-out backwards;
+}
+
+.detail-panel.open .detail-section:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.detail-panel.open .detail-section:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.detail-panel.open .detail-section:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.detail-panel.open .detail-section:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+.detail-panel.open .detail-section:nth-child(5) {
+    animation-delay: 0.3s;
+}
+
+@keyframes sectionSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .detail-header {
@@ -937,6 +1033,8 @@ body {
 .detail-title {
     font-size: 1.25rem;
     font-weight: 600;
+    /* Fade in with panel */
+    animation: fadeIn 0.3s ease-out;
 }
 
 .detail-close {
@@ -945,11 +1043,12 @@ body {
     color: var(--text-secondary);
     font-size: 1.5rem;
     cursor: pointer;
-    transition: color var(--transition-fast);
+    transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
 .detail-close:hover {
     color: var(--text-primary);
+    transform: scale(1.1);
 }
 
 .detail-content {
@@ -968,6 +1067,181 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: var(--spacing-md);
+}
+
+/* ========================================
+   NARRATIVE DNA VISUALIZATION
+   ======================================== */
+.dna-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    font-family: var(--font-mono);
+    margin-top: var(--spacing-lg);
+}
+
+.dna-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dna-icon {
+    font-size: 1rem;
+    color: var(--accent-primary);
+}
+
+.dna-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.dna-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.dna-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 40px;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.dna-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.dna-bar-container {
+    height: 12px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+}
+
+.dna-bar {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.dna-bar.coherence {
+    background: var(--accent-primary);
+}
+
+.dna-bar.persistence {
+    background: var(--accent-secondary);
+}
+
+.dna-bar.stability {
+    background: var(--accent-tertiary);
+}
+
+.dna-value {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+.dna-velocity-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px dashed var(--border-color);
+}
+
+.dna-velocity-value {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.dna-velocity-value.rising-fast {
+    color: var(--bullish);
+}
+
+.dna-velocity-value.rising {
+    color: rgba(0, 255, 136, 0.7);
+}
+
+.dna-velocity-value.stable {
+    color: var(--text-secondary);
+}
+
+.dna-velocity-value.declining {
+    color: var(--accent-warning);
+}
+
+/* ========================================
+   INTERROGATION MODE
+   ======================================== */
+.interrogation-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.interrogation-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.interrogation-icon {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.interrogation-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.interrogation-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.interrogation-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    line-height: 1.4;
+}
+
+.interrogation-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.interrogation-btn:active {
+    transform: scale(0.98);
 }
 
 /* ========================================
