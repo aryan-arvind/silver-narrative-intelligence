@@ -7,7 +7,8 @@
 const API_BASE_URL = 'http://localhost:8000';
 const ENDPOINTS = {
     narratives: `${API_BASE_URL}/api/narratives`,
-    health: `${API_BASE_URL}/api/health`
+    health: `${API_BASE_URL}/api/health`,
+    explain: `${API_BASE_URL}/api/explain`
 };
 
 // State
@@ -22,25 +23,30 @@ const elements = {
     errorClose: document.getElementById('errorClose'),
     refreshBtn: document.getElementById('refreshBtn'),
     lastUpdated: document.getElementById('lastUpdated'),
-    
+
     // Stats
     activeNarratives: document.getElementById('activeNarratives'),
     marketBias: document.getElementById('marketBias'),
     biasIcon: document.getElementById('biasIcon'),
     narrativeVolatility: document.getElementById('narrativeVolatility'),
     signalConfidence: document.getElementById('signalConfidence'),
-    
+
+    // War Room
+    chatHistory: document.getElementById('chatHistory'),
+    chatInput: document.getElementById('chatInput'),
+    sendBtn: document.getElementById('sendBtn'),
+
     // Lists
     narrativesList: document.getElementById('narrativesList'),
     narrativesGrid: document.getElementById('narrativesGrid'),
     chartLegend: document.getElementById('chartLegend'),
-    
+
     // Sections
     timelineContainer: document.getElementById('timelineContainer'),
     signalsContainer: document.getElementById('signalsContainer'),
     validNarratives: document.getElementById('validNarratives'),
     discardedNoise: document.getElementById('discardedNoise'),
-    
+
     // Detail Panel
     detailPanel: document.getElementById('detailPanel'),
     detailTitle: document.getElementById('detailTitle'),
@@ -55,20 +61,20 @@ const elements = {
 async function fetchNarratives() {
     showLoading(true);
     hideError();
-    
+
     try {
         const response = await fetch(ENDPOINTS.narratives);
-        
+
         if (!response.ok) {
             throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         narrativesData = data;
-        
+
         updateDashboard(data);
         updateLastUpdated();
-        
+
     } catch (error) {
         console.error('Failed to fetch narratives:', error);
         showError(`Failed to connect to backend: ${error.message}. Make sure the API is running on ${API_BASE_URL}`);
@@ -77,31 +83,69 @@ async function fetchNarratives() {
     }
 }
 
+async function sendExplanationRequest() {
+    const question = elements.chatInput.value.trim();
+    if (!question) return;
+
+    // Add user message via logic (implemented in updateUI)
+    appendChatMessage('user', question);
+    elements.chatInput.value = '';
+
+    // Add loading indicator
+    const loadingId = appendChatMessage('system', 'Analyzing strategic context...');
+
+    try {
+        const response = await fetch(ENDPOINTS.explain, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ question })
+        });
+
+        if (!response.ok) throw new Error('Failed to get explanation');
+
+        const data = await response.json();
+
+        // Remove loading
+        removeChatMessage(loadingId);
+
+        // Add bot response
+        appendChatMessage('system', data.explanation);
+
+    } catch (error) {
+        console.error('Explanation error:', error);
+        removeChatMessage(loadingId);
+        appendChatMessage('system', "I encountered an error analyzing that request. Please try again.");
+    }
+}
+
+
 // ============================================
 // UI Update Functions
 // ============================================
 
 function updateDashboard(data) {
     const { narratives, noise, metadata } = data;
-    
+
     // Update stats cards
     updateStatsCards(narratives);
-    
+
     // Update narrative chart
     updateNarrativeChart(narratives);
-    
+
     // Update narratives list
     renderNarrativesList(narratives);
-    
+
     // Update full narratives grid
     renderNarrativesGrid(narratives);
-    
+
     // Update timeline
     renderTimeline(narratives);
-    
+
     // Update signals
     renderSignals(narratives);
-    
+
     // Update noise analysis
     renderNoiseAnalysis(narratives, noise);
 }
@@ -109,41 +153,41 @@ function updateDashboard(data) {
 function updateStatsCards(narratives) {
     // Active narratives count
     elements.activeNarratives.textContent = narratives.length;
-    
+
     // Market bias - aggregate sentiment
     const sentimentCounts = { Bullish: 0, Bearish: 0, Neutral: 0 };
     narratives.forEach(n => sentimentCounts[n.sentiment]++);
-    
+
     let bias = 'Neutral';
     if (sentimentCounts.Bullish > sentimentCounts.Bearish + sentimentCounts.Neutral) {
         bias = 'Bullish';
     } else if (sentimentCounts.Bearish > sentimentCounts.Bullish + sentimentCounts.Neutral) {
         bias = 'Bearish';
     }
-    
+
     elements.marketBias.textContent = bias;
-    elements.biasIcon.style.color = bias === 'Bullish' ? 'var(--bullish)' : 
-                                     bias === 'Bearish' ? 'var(--bearish)' : 'var(--neutral)';
-    
+    elements.biasIcon.style.color = bias === 'Bullish' ? 'var(--bullish)' :
+        bias === 'Bearish' ? 'var(--bearish)' : 'var(--neutral)';
+
     // Narrative volatility - variance in confidence scores
     const confidences = narratives.map(n => n.confidence);
     const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length || 0;
     const variance = confidences.reduce((sum, c) => sum + Math.pow(c - avgConfidence, 2), 0) / confidences.length || 0;
     const volatility = Math.min(Math.sqrt(variance) * 2, 1); // Normalize
     elements.narrativeVolatility.textContent = volatility < 0.3 ? 'Low' : volatility < 0.6 ? 'Medium' : 'High';
-    
+
     // Signal confidence - average confidence
     elements.signalConfidence.textContent = `${Math.round(avgConfidence * 100)}%`;
 }
 
 function updateNarrativeChart(narratives) {
     const ctx = document.getElementById('narrativeChart').getContext('2d');
-    
+
     // Destroy existing chart
     if (narrativeChart) {
         narrativeChart.destroy();
     }
-    
+
     // Prepare data - each narrative has a timeline
     const colors = [
         'rgba(0, 212, 255, 1)',
@@ -152,17 +196,17 @@ function updateNarrativeChart(narratives) {
         'rgba(255, 170, 0, 1)',
         'rgba(255, 71, 87, 1)'
     ];
-    
+
     const datasets = narratives.map((narrative, idx) => {
         const color = colors[idx % colors.length];
         const timeline = narrative.timeline || [];
-        
+
         // Create data points with confidence as Y value
         const dataPoints = timeline.map(day => ({
-            x: day,
-            y: narrative.confidence * (0.8 + Math.random() * 0.4) // Add some variance
+            x: formatDate(day),  // Match the labels
+            y: narrative.confidence * (0.8 + Math.random() * 0.4)
         }));
-        
+
         return {
             label: narrative.name,
             data: dataPoints,
@@ -175,10 +219,11 @@ function updateNarrativeChart(narratives) {
             pointHoverRadius: 6
         };
     });
-    
+
     narrativeChart = new Chart(ctx, {
         type: 'line',
         data: {
+            labels: getLastDays(14).map(d => formatDate(d)),
             datasets: datasets
         },
         options: {
@@ -190,10 +235,10 @@ function updateNarrativeChart(narratives) {
             },
             scales: {
                 x: {
-                    type: 'linear',
+                    type: 'category',
                     title: {
                         display: true,
-                        text: 'Days',
+                        text: 'Timeline',
                         color: '#a0a0b0'
                     },
                     grid: {
@@ -239,7 +284,7 @@ function updateNarrativeChart(narratives) {
             }
         }
     });
-    
+
     // Update legend
     updateChartLegend(narratives, colors);
 }
@@ -295,7 +340,12 @@ function renderNarrativesGrid(narratives) {
             <div class="narrative-full-header">
                 <div>
                     <div class="narrative-full-title">${n.name}</div>
-                    <span class="narrative-id">${n.id}</span>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                        <span class="narrative-id">${n.id}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">
+                            Sources: <span style="color: var(--accent-primary);">${n.sources.join(', ')}</span>
+                        </span>
+                    </div>
                 </div>
                 <div>
                     <span class="sentiment-tag ${n.sentiment.toLowerCase()}">${n.sentiment}</span>
@@ -341,12 +391,12 @@ function renderTimeline(narratives) {
             periods[day].push(n.name);
         });
     });
-    
-    const sortedDays = Object.keys(periods).sort((a, b) => a - b);
-    
+
+    const sortedDays = Object.keys(periods).sort();
+
     elements.timelineContainer.innerHTML = sortedDays.map(day => `
         <div class="timeline-item">
-            <div class="timeline-period">Day ${day}</div>
+            <div class="timeline-period">${formatDate(day)}</div>
             <div class="timeline-narratives">
                 ${periods[day].map(name => `
                     <span class="timeline-tag">${name}</span>
@@ -360,12 +410,13 @@ function renderSignals(narratives) {
     elements.signalsContainer.innerHTML = narratives.map(n => {
         // Generate mini chart data from timeline
         const timeline = n.timeline || [];
-        const maxDay = Math.max(...timeline, 1);
-        const barHeights = [];
-        for (let i = 1; i <= maxDay; i++) {
-            barHeights.push(timeline.includes(i) ? 30 + Math.random() * 30 : 5);
-        }
-        
+        const lastDays = getLastDays(14);
+
+        const barHeights = lastDays.map(day => {
+            // Check if this narrative was active on this day
+            return timeline.includes(day) ? 30 + Math.random() * 30 : 5;
+        });
+
         return `
             <div class="signal-card">
                 <div class="signal-header">
@@ -394,14 +445,45 @@ function renderNoiseAnalysis(narratives, noise) {
             </div>
         </div>
     `).join('') || '<p style="color: var(--text-muted)">No valid narratives detected</p>';
-    
+
     // Discarded noise
     elements.discardedNoise.innerHTML = noise.map(item => `
         <div class="noise-item">
             <div class="noise-reason">${item.reason}</div>
-            ${item.texts.map(t => `<div class="noise-text">"${t}"</div>`).join('')}
+            ${item.texts.map(t => {
+        const cleanText = t.length > 100 ? t.substring(0, 97) + '...' : t;
+        return `<div class="noise-text">"${cleanText}"</div>`;
+    }).join('')}
         </div>
     `).join('') || '<p style="color: var(--text-muted)">No noise detected</p>';
+}
+
+// Chat UI Functions
+function appendChatMessage(sender, text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${sender}`;
+    const id = 'msg-' + Date.now();
+    messageDiv.id = id;
+
+    // Parse markdown-like basic formatting
+    let formattedText = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+
+    messageDiv.innerHTML = `
+        <div class="message-content">
+            ${formattedText}
+        </div>
+    `;
+
+    elements.chatHistory.appendChild(messageDiv);
+    elements.chatHistory.scrollTop = elements.chatHistory.scrollHeight;
+    return id;
+}
+
+function removeChatMessage(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
 }
 
 // ============================================
@@ -411,7 +493,7 @@ function renderNoiseAnalysis(narratives, noise) {
 function showNarrativeDetail(id) {
     const narrative = narrativesData?.narratives.find(n => n.id === id);
     if (!narrative) return;
-    
+
     elements.detailTitle.textContent = narrative.name;
     elements.detailContent.innerHTML = `
         <div class="detail-section">
@@ -468,7 +550,7 @@ function showNarrativeDetail(id) {
                         border-radius: 4px;
                         font-family: var(--font-mono);
                         font-size: 0.85rem;
-                    ">Day ${day}</span>
+                    ">${formatDate(day)}</span>
                 `).join('')}
             </div>
         </div>
@@ -489,7 +571,7 @@ function showNarrativeDetail(id) {
             </div>
         </div>
     `;
-    
+
     elements.detailPanel.classList.add('open');
 }
 
@@ -513,17 +595,17 @@ function closeDetailPanel() {
 function initNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.section');
-    
+
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-            
+
             const sectionId = item.dataset.section;
-            
+
             // Update nav
             navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
-            
+
             // Update sections
             sections.forEach(s => s.classList.remove('active'));
             document.getElementById(`${sectionId}-section`).classList.add('active');
@@ -554,12 +636,29 @@ function hideError() {
 
 function updateLastUpdated() {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
+    const timeStr = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
         minute: '2-digit',
         second: '2-digit'
     });
     elements.lastUpdated.textContent = `Last updated: ${timeStr}`;
+}
+
+function getLastDays(numDays) {
+    const days = [];
+    for (let i = numDays - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+    return days;
+}
+
+function formatDate(dateStr) {
+    // Convert YYYY-MM-DD to MMM DD (e.g. Jan 24)
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 // ============================================
@@ -570,7 +669,20 @@ function initEventListeners() {
     elements.refreshBtn.addEventListener('click', fetchNarratives);
     elements.errorClose.addEventListener('click', hideError);
     elements.detailClose.addEventListener('click', closeDetailPanel);
-    
+
+    // War Room Listeners
+    if (elements.sendBtn) {
+        elements.sendBtn.addEventListener('click', sendExplanationRequest);
+    }
+
+    if (elements.chatInput) {
+        elements.chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendExplanationRequest();
+            }
+        });
+    }
+
     // Close detail panel on escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {

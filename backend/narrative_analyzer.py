@@ -12,7 +12,7 @@ class NarrativeAnalyzer:
     
     # Thresholds for narrative vs noise classification
     COHERENCE_THRESHOLD = 0.3
-    PERSISTENCE_THRESHOLD = 0.2
+    PERSISTENCE_THRESHOLD = 0.3
     MIN_SIZE = 2
     
     # Lifecycle stage thresholds based on persistence
@@ -108,12 +108,28 @@ class NarrativeAnalyzer:
         return pattern_info["name"], pattern_info["sentiment"], description
     
     def _generate_description(self, pattern_key: str, texts: List[str]) -> str:
-        """Generate human-readable description for the narrative."""
+        """Generate human-readable description using actual cluster content."""
+        # Try to find the best representative text from the cluster
+        if texts:
+            # Filter valid texts (length > 30)
+            valid_texts = [t for t in texts if len(t) > 30]
+            
+            if valid_texts:
+                # Use the longest text as it likely contains the most detail
+                # (News headlines or Reddit posts)
+                best_text = sorted(valid_texts, key=len, reverse=True)[0]
+                
+                # Truncate if extremely long (e.g. Reddit selftext)
+                if len(best_text) > 180:
+                    return best_text[:177] + "..."
+                return best_text
+        
+        # Fallback to static descriptions
         descriptions = {
-            "industrial": "Rising industrial demand for silver driven by green energy, semiconductors, and technology manufacturing is creating sustained bullish pressure on prices.",
-            "inflation": "Macro-economic conditions including inflation fears and monetary policy shifts are driving safe-haven flows into silver as a store of value.",
-            "supply": "Global silver supply faces headwinds from mining disruptions, declining ore grades, and production constraints across major producing regions.",
-            "medical": "Emerging applications of silver in medical devices and healthcare settings highlight novel demand drivers for the precious metal."
+            "industrial": "Rising industrial demand for silver driven by green energy, semiconductors, and technology manufacturing.",
+            "inflation": "Macro-economic conditions including inflation fears and monetary policy shifts are driving safe-haven flows.",
+            "supply": "Global silver supply faces headwinds from mining disruptions and production constraints.",
+            "medical": "Emerging applications of silver in medical devices and healthcare settings."
         }
         return descriptions.get(pattern_key, "Market narrative detected through pattern analysis of recent news flow.")
     
@@ -167,9 +183,13 @@ class NarrativeAnalyzer:
                     cluster["size"]
                 )
                 
-                # Build timeline from timestamps
-                timestamps = sorted(set(cluster["timestamps"]))
-                timeline = [7 - t for t in timestamps]  # Convert to chronological order
+                # Build timeline from dates
+                timeline = sorted(list(set(cluster.get("dates", []))))
+                
+                # Fallback if no dates (e.g. sample data without dates)
+                if not timeline:
+                    timestamps = sorted(set(cluster["timestamps"]))
+                    timeline = [f"Day {7 - t}" for t in timestamps]
                 
                 narrative = {
                     "id": f"N{idx + 1}",
@@ -180,8 +200,8 @@ class NarrativeAnalyzer:
                     "coherence": round(cluster["coherence"], 2),
                     "persistence": round(cluster["persistence"], 2),
                     "description": description,
-                    "sources": ["News"],
-                    "timeline": sorted(timeline)
+                    "sources": cluster.get("sources", ["Unknown"]),
+                    "timeline": timeline
                 }
                 narratives.append(narrative)
             else:

@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import time
+from datetime import date, timedelta
 
 from sample_data import SILVER_NEWS_DATA
 from embedding_service import get_embedding_service
@@ -28,7 +29,8 @@ class NarrativeResponse(BaseModel):
     persistence: float
     description: str
     sources: List[str]
-    timeline: List[int]
+    sources: List[str]
+    timeline: List[str]
 
 
 class NoiseItem(BaseModel):
@@ -110,6 +112,12 @@ async def get_narratives(use_live_data: bool = True):
             ingestion_service = get_ingestion_service()
             data = ingestion_service.fetch_all_sources()
             data_source = "live"
+            
+            # Fallback if live data fails or returns nothing
+            if not data:
+                print("Live data search returned 0 results. Falling back to sample data.")
+                data = SILVER_NEWS_DATA
+                data_source = "sample_fallback"
         else:
             data = SILVER_NEWS_DATA
             data_source = "sample"
@@ -117,7 +125,20 @@ async def get_narratives(use_live_data: bool = True):
         # Extract texts, timestamps, and sources
         texts = [item["text"] for item in data]
         timestamps = [item.get("timestamp", 1) for item in data]
-        sources = list(set(item.get("source", "Unknown") for item in data))
+        text_sources = [item.get("source", "Unknown") for item in data]
+        sources = list(set(text_sources))
+        
+        # Extract or calculate dates
+        today = date.today()
+        dates = []
+        for item in data:
+            if "date" in item:
+                dates.append(item["date"])
+            else:
+                # Calculate from timestamp (days ago) for sample data
+                days_ago = item.get("timestamp", 0)
+                d = today - timedelta(days=days_ago)
+                dates.append(d.strftime("%Y-%m-%d"))
         
         # Step 2: Generate embeddings
         embedding_service = get_embedding_service()
@@ -129,7 +150,7 @@ async def get_narratives(use_live_data: bool = True):
         
         # Step 4: Get cluster information with coherence and persistence scores
         clusters, noise_texts = clustering_service.get_cluster_info(
-            embeddings, labels, texts, timestamps
+            embeddings, labels, texts, timestamps, text_sources, dates
         )
         
         # Step 5 & 6: Analyze clusters - classify and stage

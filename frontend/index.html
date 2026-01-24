@@ -1,29 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Narrative Detection Agent | Silver Market Intelligence</title>
-    <meta name="description" content="Autonomous pattern hunter for detecting and analyzing market narratives around silver">
+    <title>AgNarrative | Silver Market Intelligence</title>
+    <meta name="description"
+        content="Autonomous pattern hunter for detecting and analyzing market narratives around silver">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo">
-                <div class="logo-icon">◈</div>
+                <div class="logo-icon">Ag</div>
                 <div class="logo-text">
-                    <span class="logo-title">ECHELON</span>
-                    <span class="logo-subtitle">Narrative Agent</span>
+                    <span class="logo-title">AgNarrative</span>
+                    <span class="logo-subtitle">Intelligence Agent</span>
                 </div>
             </div>
-            
+
             <nav class="nav-menu">
                 <a href="#" class="nav-item active" data-section="overview">
                     <span class="nav-icon">◉</span>
                     <span class="nav-text">Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-section="war-room">
+                    <span class="nav-icon">⚔</span>
+                    <span class="nav-text">War Room</span>
                 </a>
                 <a href="#" class="nav-item" data-section="narratives">
                     <span class="nav-icon">◎</span>
@@ -42,7 +49,7 @@
                     <span class="nav-text">Noise Analysis</span>
                 </a>
             </nav>
-            
+
             <div class="sidebar-footer">
                 <div class="status-indicator">
                     <span class="status-dot"></span>
@@ -56,15 +63,22 @@
             <!-- Header -->
             <header class="header">
                 <div class="header-left">
-                    <h1 class="page-title">Market Narrative Intelligence</h1>
+                    <h1 class="page-title">AgNarrative Intelligence</h1>
                     <p class="page-subtitle">Silver Prediction Market • Autonomous Pattern Detection</p>
                 </div>
                 <div class="header-right">
-                    <button class="refresh-btn" id="refreshBtn">
-                        <span class="refresh-icon">↻</span>
-                        Refresh Analysis
-                    </button>
-                    <div class="timestamp" id="lastUpdated">Last updated: --</div>
+                    <div
+                        style="font-size: 0.75rem; color: var(--accent-primary); margin-bottom: 8px; text-align: right; background: rgba(0, 212, 255, 0.1); padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(0, 212, 255, 0.2);">
+                        Tracking: <strong>NewsAPI</strong> • <strong>Reddit</strong> • <strong>Yahoo Finance</strong> •
+                        <strong>X (Twitter)</strong>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="refresh-btn" id="refreshBtn">
+                            <span class="refresh-icon">↻</span>
+                            Refresh Analysis
+                        </button>
+                        <div class="timestamp" id="lastUpdated">Last updated: --</div>
+                    </div>
                 </div>
             </header>
 
@@ -133,6 +147,41 @@
                 </div>
             </section>
 
+            <!-- War Room Section -->
+            <section id="war-room-section" class="section">
+                <div class="war-room-container">
+                    <div class="war-room-header">
+                        <h2 class="section-title">Strategic War Room</h2>
+                        <p class="section-subtitle">Deep Dive Analysis & Lifecycle Intelligence</p>
+                    </div>
+
+                    <div class="chat-container">
+                        <div class="chat-history" id="chatHistory">
+                            <div class="chat-message system">
+                                <div class="message-content">
+                                    <p>Welcome to the ECHELON War Room. I can explain the detected narratives and market
+                                        dynamics.</p>
+                                    <p>Try asking:</p>
+                                    <ul>
+                                        <li>"Why is Industrial Demand in Growth stage?"</li>
+                                        <li>"Compare Inflation Hedge vs Industrial Demand"</li>
+                                        <li>"What would move Industrial Demand to Acceleration?"</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <input type="text" class="chat-input" id="chatInput"
+                                placeholder="Ask a strategic question about the narratives...">
+                            <button class="send-btn" id="sendBtn">
+                                <span>➤</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Narratives Section -->
             <section id="narratives-section" class="section">
                 <h2 class="section-title">All Detected Narratives</h2>
@@ -185,4 +234,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

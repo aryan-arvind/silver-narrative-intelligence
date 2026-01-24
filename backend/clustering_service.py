@@ -111,7 +111,7 @@ class ClusteringService:
             unique_periods = len(set(cluster_timestamps))
             
             # Normalize by max possible range
-            persistence_scores[label] = min(1.0, unique_periods / max(max_range * 0.5, 1))
+            persistence_scores[label] = min(1.0, unique_periods / max(max_range, 1))
         
         return persistence_scores
     
@@ -120,7 +120,9 @@ class ClusteringService:
         embeddings: np.ndarray, 
         labels: np.ndarray, 
         texts: List[str],
-        timestamps: List[int]
+        timestamps: List[int],
+        sources: List[str],
+        dates: List[str]
     ) -> List[Dict]:
         """
         Get detailed information about each cluster.
@@ -140,11 +142,21 @@ class ClusteringService:
             cluster_mask = labels == label
             cluster_texts = [t for t, m in zip(texts, cluster_mask) if m]
             cluster_timestamps = [ts for ts, m in zip(timestamps, cluster_mask) if m]
+            cluster_sources = [s for s, m in zip(sources, cluster_mask) if m]
+            cluster_dates = [d for d, m in zip(dates, cluster_mask) if m]
+            
+            # Get unique sources
+            unique_sources = sorted(list(set(cluster_sources)))
+            
+            # Get unique dates
+            unique_dates = sorted(list(set(cluster_dates)))
             
             clusters.append({
                 "cluster_id": label,
                 "texts": cluster_texts,
                 "timestamps": cluster_timestamps,
+                "sources": unique_sources,
+                "dates": unique_dates,
                 "coherence": coherence_scores.get(label, 0.5),
                 "persistence": persistence_scores.get(label, 0.5),
                 "size": len(cluster_texts)
