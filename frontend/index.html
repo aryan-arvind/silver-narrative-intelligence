@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Narrative Detection Agent | Silver Market Intelligence</title>
+    <meta name="description" content="Autonomous pattern hunter for detecting and analyzing market narratives around silver">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">◈</div>
+                <div class="logo-text">
+                    <span class="logo-title">ECHELON</span>
+                    <span class="logo-subtitle">Narrative Agent</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-section="overview">
+                    <span class="nav-icon">◉</span>
+                    <span class="nav-text">Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-section="narratives">
+                    <span class="nav-icon">◎</span>
+                    <span class="nav-text">Narratives</span>
+                </a>
+                <a href="#" class="nav-item" data-section="timeline">
+                    <span class="nav-icon">◌</span>
+                    <span class="nav-text">Timeline</span>
+                </a>
+                <a href="#" class="nav-item" data-section="signals">
+                    <span class="nav-icon">◍</span>
+                    <span class="nav-text">Signals</span>
+                </a>
+                <a href="#" class="nav-item" data-section="noise">
+                    <span class="nav-icon">◇</span>
+                    <span class="nav-text">Noise Analysis</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">System Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1 class="page-title">Market Narrative Intelligence</h1>
+                    <p class="page-subtitle">Silver Prediction Market • Autonomous Pattern Detection</p>
+                </div>
+                <div class="header-right">
+                    <button class="refresh-btn" id="refreshBtn">
+                        <span class="refresh-icon">↻</span>
+                        Refresh Analysis
+                    </button>
+                    <div class="timestamp" id="lastUpdated">Last updated: --</div>
+                </div>
+            </header>
+
+            <!-- Error Display -->
+            <div class="error-banner" id="errorBanner" style="display: none;">
+                <span class="error-icon">⚠</span>
+                <span class="error-message" id="errorMessage"></span>
+                <button class="error-close" id="errorClose">×</button>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Analyzing market narratives...</p>
+            </div>
+
+            <!-- Overview Section -->
+            <section id="overview-section" class="section active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon narratives-icon">◎</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="activeNarratives">--</span>
+                            <span class="stat-label">Active Narratives</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bias-icon" id="biasIcon">◈</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="marketBias">--</span>
+                            <span class="stat-label">Market Bias</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon volatility-icon">◆</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="narrativeVolatility">--</span>
+                            <span class="stat-label">Narrative Volatility</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon confidence-icon">◉</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="signalConfidence">--</span>
+                            <span class="stat-label">Signal Confidence</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2 class="chart-title">Narrative Strength Timeline</h2>
+                        <div class="chart-legend" id="chartLegend"></div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="narrativeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Narratives List -->
+                <div class="narratives-section">
+                    <h2 class="section-title">Detected Narratives</h2>
+                    <div class="narratives-list" id="narrativesList"></div>
+                </div>
+            </section>
+
+            <!-- Narratives Section -->
+            <section id="narratives-section" class="section">
+                <h2 class="section-title">All Detected Narratives</h2>
+                <div class="narratives-grid" id="narrativesGrid"></div>
+            </section>
+
+            <!-- Timeline Section -->
+            <section id="timeline-section" class="section">
+                <h2 class="section-title">Narrative Timeline</h2>
+                <div class="timeline-container" id="timelineContainer"></div>
+            </section>
+
+            <!-- Signals Section -->
+            <section id="signals-section" class="section">
+                <h2 class="section-title">Signal Analysis</h2>
+                <div class="signals-container" id="signalsContainer"></div>
+            </section>
+
+            <!-- Noise Analysis Section -->
+            <section id="noise-section" class="section">
+                <h2 class="section-title">Valid Narratives vs Discarded Noise</h2>
+                <div class="noise-comparison">
+                    <div class="valid-narratives-panel">
+                        <h3 class="panel-title">
+                            <span class="panel-icon valid">✓</span>
+                            Valid Narratives
+                        </h3>
+                        <div class="panel-content" id="validNarratives"></div>
+                    </div>
+                    <div class="noise-panel">
+                        <h3 class="panel-title">
+                            <span class="panel-icon noise">✗</span>
+                            Discarded Noise
+                        </h3>
+                        <div class="panel-content" id="discardedNoise"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Narrative Detail Panel -->
+            <div class="detail-panel" id="detailPanel">
+                <div class="detail-header">
+                    <h2 class="detail-title" id="detailTitle">Narrative Details</h2>
+                    <button class="detail-close" id="detailClose">×</button>
+                </div>
+                <div class="detail-content" id="detailContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
