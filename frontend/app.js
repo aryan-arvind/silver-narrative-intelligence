@@ -805,7 +805,58 @@ function initEventListeners() {
 function init() {
     initNavigation();
     initEventListeners();
+    initSpotlightEffect();
     fetchNarratives();
+}
+
+// ============================================
+// Spotlight Cursor Effect
+// ============================================
+
+function initSpotlightEffect() {
+    // Track mouse position and update CSS custom properties
+    document.addEventListener('mousemove', (e) => {
+        // Update CSS custom properties for spotlight position
+        document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+        document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+    });
+
+    // Optional: Create a dedicated spotlight element for more intense effect
+    const spotlight = document.createElement('div');
+    spotlight.className = 'spotlight';
+    document.body.appendChild(spotlight);
+
+    // Activate spotlight after a short delay
+    setTimeout(() => {
+        spotlight.classList.add('active');
+    }, 500);
+
+    // Update spotlight position with smooth animation
+    let mouseX = 0, mouseY = 0;
+    let spotlightX = 0, spotlightY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    // Smooth follow animation
+    function animateSpotlight() {
+        // Ease towards mouse position
+        spotlightX += (mouseX - spotlightX) * 0.1;
+        spotlightY += (mouseY - spotlightY) * 0.1;
+
+        spotlight.style.background = `radial-gradient(
+            600px circle at ${spotlightX}px ${spotlightY}px,
+            rgba(0, 240, 255, 0.07),
+            rgba(139, 92, 246, 0.04) 40%,
+            transparent 60%
+        )`;
+
+        requestAnimationFrame(animateSpotlight);
+    }
+
+    animateSpotlight();
 }
 
 // Start the application

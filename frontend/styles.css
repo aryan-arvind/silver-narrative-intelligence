@@ -5,44 +5,51 @@
 
 /* CSS Variables - Design System */
 :root {
-    /* Colors - Dark Theme */
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #12121a;
-    --bg-tertiary: #1a1a25;
-    --bg-card: #14141f;
-    --bg-hover: #1e1e2d;
+    /* Colors - Cyberpunk Dark Theme (Pure Black) */
+    --bg-primary: #000000;
+    --bg-secondary: #050505;
+    --bg-tertiary: #0a0a0a;
+    --bg-card: #080808;
+    --bg-hover: #101010;
 
-    /* Accent Colors */
-    --accent-primary: #00d4ff;
-    --accent-secondary: #7b61ff;
+    /* Accent Colors - Cyberpunk Neon */
+    --accent-primary: #00f0ff;
+    --accent-secondary: #8b5cf6;
     --accent-tertiary: #00ff88;
-    --accent-warning: #ffaa00;
-    --accent-danger: #ff4757;
+    --accent-warning: #ffb800;
+    --accent-danger: #ff0080;
+    --accent-pink: #ff0080;
+    --accent-cyan: #00f0ff;
 
     /* Sentiment Colors */
     --bullish: #00ff88;
-    --bearish: #ff4757;
-    --neutral: #888899;
+    --bearish: #ff0080;
+    --neutral: #6b7280;
 
     /* Text Colors */
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0b0;
-    --text-muted: #666680;
+    --text-primary: #e8e8ff;
+    --text-secondary: #a0a0c0;
+    --text-muted: #5a5a7a;
 
     /* Borders */
-    --border-color: #2a2a3a;
-    --border-accent: #3a3a4a;
+    --border-color: #151515;
+    --border-accent: #1f1f1f;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #7b61ff 100%);
-    --gradient-bullish: linear-gradient(135deg, #00ff88 0%, #00d4aa 100%);
-    --gradient-card: linear-gradient(145deg, #14141f 0%, #1a1a28 100%);
+    /* Gradients - Cyberpunk Neon */
+    --gradient-primary: linear-gradient(135deg, #00f0ff 0%, #8b5cf6 50%, #ff0080 100%);
+    --gradient-bullish: linear-gradient(135deg, #00ff88 0%, #00f0ff 100%);
+    --gradient-card: linear-gradient(145deg, #080808 0%, #0a0a0a 100%);
+    --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    --gradient-cyberpunk: linear-gradient(90deg, #00f0ff, #8b5cf6, #ff0080);
 
-    /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.2);
+    /* Shadows - Intense Neon Glow Effects */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.3);
+    --shadow-glow-primary: 0 0 20px rgba(0, 240, 255, 0.5), 0 0 40px rgba(0, 240, 255, 0.3), 0 0 60px rgba(0, 240, 255, 0.1);
+    --shadow-glow-purple: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3), 0 0 60px rgba(139, 92, 246, 0.1);
+    --shadow-glow-pink: 0 0 20px rgba(255, 0, 128, 0.5), 0 0 40px rgba(255, 0, 128, 0.3), 0 0 60px rgba(255, 0, 128, 0.1);
 
     /* Spacing */
     --spacing-xs: 4px;
@@ -253,14 +260,32 @@ body {
     border-radius: var(--radius-md);
     color: var(--text-primary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-normal);
     font-size: 0.85rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.refresh-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    z-index: -1;
 }
 
 .refresh-btn:hover {
-    background: var(--bg-hover);
+    background: transparent;
     border-color: var(--accent-primary);
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-glow-primary);
+    color: var(--bg-primary);
+    text-shadow: none;
+}
+
+.refresh-btn:hover::before {
+    opacity: 1;
 }
 
 .refresh-icon {
@@ -1136,7 +1161,7 @@ body {
 
 .chat-message.user {
     align-self: flex-end;
-    background: rgba(0, 212, 255, 0.15);
+    background: rgba(0, 240, 255, 0.1);
     border: 1px solid var(--accent-primary);
     color: var(--text-primary);
     border-radius: var(--radius-md) 0 var(--radius-md) var(--radius-md);
@@ -1174,7 +1199,7 @@ body {
 .chat-input:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+    box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.25), 0 0 15px rgba(0, 240, 255, 0.1);
 }
 
 .send-btn {
@@ -1189,14 +1214,17 @@ body {
     color: #000;
     font-size: 1.2rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-normal);
+    position: relative;
 }
 
 .send-btn:hover {
-    background: var(--accent-secondary);
-    color: #fff;
+    background: var(--accent-tertiary);
+    color: #000;
     transform: translateY(-2px);
+    box-shadow: var(--shadow-glow-primary);
 }
+
 /* ========================================
    ANALYST OVERHAUL STYLES
    ======================================== */
@@ -1205,7 +1233,8 @@ body {
 .narrative-card {
     display: flex;
     flex-direction: column;
-    gap: 0; /* Reset gap, using padding/borders instead */
+    gap: 0;
+    /* Reset gap, using padding/borders instead */
 }
 
 .card-header-section {
@@ -1255,7 +1284,7 @@ body {
     font-family: var(--font-mono);
     font-size: 0.8rem;
     color: var(--text-muted);
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     padding: 6px 10px;
     border-radius: 4px;
 }
@@ -1284,8 +1313,9 @@ body {
 .report-title {
     font-size: 2.2rem;
     font-weight: 700;
-    background: linear-gradient(90deg, #fff, #a0a0b0);
+    background: linear-gradient(90deg, #fff, #b0a8c9);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 10px;
 }
@@ -1303,23 +1333,51 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-.badg.status { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+.badg.status {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
 /* Reuse existing logic for status colors via app.js classes or specific overrides needed? 
    No, distinct status classes like .status.emerging are better handled by reusing .status-tag if possible, 
    but here we have specific layout. Let's add helpers. */
-.badg.status.emerging { background: rgba(0, 212, 255, 0.15); color: var(--accent-primary); border: 1px solid rgba(0, 212, 255, 0.3); }
-.badg.status.strengthening { background: rgba(0, 255, 136, 0.15); color: var(--bullish); border: 1px solid rgba(0, 255, 136, 0.3); }
-.badg.status.fading { background: rgba(255, 71, 87, 0.15); color: var(--bearish); border: 1px solid rgba(255, 71, 87, 0.3); }
-.badg.status.continuing { background: rgba(136, 136, 153, 0.15); color: var(--neutral); border: 1px solid rgba(136, 136, 153, 0.3); }
+.badg.status.emerging {
+    background: rgba(0, 212, 255, 0.15);
+    color: var(--accent-primary);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
 
-.badg.stage { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); }
+.badg.status.strengthening {
+    background: rgba(0, 255, 136, 0.15);
+    color: var(--bullish);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.badg.status.fading {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--bearish);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+.badg.status.continuing {
+    background: rgba(136, 136, 153, 0.15);
+    color: var(--neutral);
+    border: 1px solid rgba(136, 136, 153, 0.3);
+}
+
+.badg.stage {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
 .report-section {
     margin-bottom: 30px;
-    background: rgba(255,255,255,0.02);
+    background: rgba(255, 255, 255, 0.02);
     padding: 20px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .report-section h3 {
@@ -1347,8 +1405,8 @@ body {
 .report-card.metric-card {
     text-align: center;
     padding: 20px;
-    background: rgba(20,20,35,0.6);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(20, 20, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 8px;
 }
 
@@ -1386,7 +1444,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 4px;
     margin-bottom: 6px;
     border-left: 2px solid transparent;
@@ -1394,7 +1452,7 @@ body {
 }
 
 .timeline-entry:hover {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .status-dot {
@@ -1404,12 +1462,186 @@ body {
     display: inline-block;
 }
 
-.status-dot.emerging { background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-primary); }
-.status-dot.strengthening { background: var(--bullish); box-shadow: 0 0 6px var(--bullish); }
-.status-dot.fading { background: var(--bearish); }
-.status-dot.continuing { background: var(--neutral); }
+.status-dot.emerging {
+    background: var(--accent-primary);
+    box-shadow: 0 0 6px var(--accent-primary);
+}
+
+.status-dot.strengthening {
+    background: var(--bullish);
+    box-shadow: 0 0 6px var(--bullish);
+}
+
+.status-dot.fading {
+    background: var(--bearish);
+}
+
+.status-dot.continuing {
+    background: var(--neutral);
+}
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   NEON GLOW EFFECTS - FINTECH THEME
+   ======================================== */
+
+/* Pulsing glow animation */
+@keyframes neonPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.5),
+            0 0 40px rgba(0, 240, 255, 0.25),
+            0 0 60px rgba(0, 240, 255, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(0, 240, 255, 0.7),
+            0 0 60px rgba(0, 240, 255, 0.4),
+            0 0 90px rgba(0, 240, 255, 0.2);
+    }
+}
+
+@keyframes purplePulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.5),
+            0 0 40px rgba(139, 92, 246, 0.25);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(139, 92, 246, 0.7),
+            0 0 60px rgba(139, 92, 246, 0.4);
+    }
+}
+
+@keyframes pinkPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(255, 0, 128, 0.5),
+            0 0 40px rgba(255, 0, 128, 0.25);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(255, 0, 128, 0.7),
+            0 0 60px rgba(255, 0, 128, 0.4);
+    }
+}
+
+@keyframes cyberpunkGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.4),
+            0 0 40px rgba(139, 92, 246, 0.2),
+            0 0 60px rgba(255, 0, 128, 0.1);
+    }
+
+    33% {
+        box-shadow: 0 0 25px rgba(139, 92, 246, 0.5),
+            0 0 50px rgba(255, 0, 128, 0.3),
+            0 0 75px rgba(0, 240, 255, 0.15);
+    }
+
+    66% {
+        box-shadow: 0 0 25px rgba(255, 0, 128, 0.5),
+            0 0 50px rgba(0, 240, 255, 0.3),
+            0 0 75px rgba(139, 92, 246, 0.15);
+    }
+}
+
+/* Global primary button glow on hover */
+.refresh-btn:hover,
+.send-btn:hover {
+    animation: neonPulse 1.5s ease-in-out infinite;
+}
+
+.nav-item.active {
+    animation: cyberpunkGlow 3s ease-in-out infinite;
+}
+
+/* Subtle glow for stat cards */
+.stat-card:hover {
+    box-shadow: var(--shadow-glow-primary);
+}
+
+/* Narrative card hover glow */
+.narrative-card:hover,
+.narrative-full-card:hover {
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.2),
+        0 0 60px rgba(139, 92, 246, 0.15);
+}
+
+/* Logo icon subtle glow */
+.logo-icon {
+    text-shadow: 0 0 30px rgba(0, 240, 255, 0.6),
+        0 0 60px rgba(139, 92, 246, 0.3);
+}
+
+/* Status dot enhanced glow */
+.status-dot.emerging {
+    animation: neonPulse 2s ease-in-out infinite;
+}
+
+.status-dot.strengthening {
+    animation: cyberpunkGlow 2s ease-in-out infinite;
+}
+
+/* ========================================
+   SPOTLIGHT CURSOR EFFECT
+   ======================================== */
+
+/* Spotlight overlay that follows cursor */
+.spotlight {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+            rgba(0, 240, 255, 0.06),
+            rgba(139, 92, 246, 0.03) 40%,
+            transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.spotlight.active {
+    opacity: 1;
+}
+
+/* Main content area gets the spotlight effect */
+.main-content {
+    position: relative;
+}
+
+.main-content::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 240px;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+            rgba(0, 240, 255, 0.04),
+            rgba(139, 92, 246, 0.02) 35%,
+            transparent 55%);
+    transition: opacity 0.2s ease;
 }
