@@ -96,16 +96,56 @@ class NarrativeAnalyzer:
         
         if not pattern_scores:
             # Generic narrative
-            return "Emerging Market Pattern", "Neutral", "Detected emerging pattern in silver market discourse."
+            return "Unclassified Emerging Narrative", "Neutral", "Detected emerging pattern in silver market discourse."
         
         # Get best matching pattern
         best_pattern = max(pattern_scores, key=pattern_scores.get)
+        best_score = pattern_scores[best_pattern]
+        
+        # REFINEMENT: If match is weak (low score), treat as unclassified
+        # Requirement: At least 3 distinct keywords must match
+        if best_score < 3:
+             return "Unclassified Emerging Narrative", "Neutral", "Pattern signal too weak for specific classification."
         pattern_info = self.NARRATIVE_PATTERNS[best_pattern]
+        
+        # Determine specific keyword sub-topic to distinctify names
+        keywords = pattern_info["keywords"]
+        kw_counts = {kw: 0 for kw in keywords}
+        for text in texts:
+            t_lower = text.lower()
+            for kw in keywords:
+                if kw in t_lower:
+                    kw_counts[kw] += 1
+        
+        # Select top specific keyword (avoiding generic ones if possible)
+        # Sort by count desc, then length desc (prefer longer specific terms over short generic ones?)
+        # Actually count is king.
+        sorted_kws = sorted(kw_counts.items(), key=lambda x: x[1], reverse=True)
+        top_kw, count = sorted_kws[0]
+        
+        final_name = pattern_info["name"]
+        # Exclude very generic terms from being the suffix unless they are the only ones
+        generic_terms = ["industrial", "production", "supply", "medical", "inflation", "market"]
+        
+        if count > 0:
+            # If top is generic, try next best
+            if top_kw in generic_terms and len(sorted_kws) > 1 and sorted_kws[1][1] > 0:
+                 top_kw = sorted_kws[1][0]
+            
+            # Format title (Solar, EV, 5G)
+            if top_kw == "ev":
+                suffix = "EVs"
+            elif top_kw == "5g":
+                suffix = "5G"
+            else:
+                suffix = top_kw.title()
+                
+            final_name = f"{final_name} ({suffix})"
         
         # Generate description based on texts
         description = self._generate_description(best_pattern, texts)
         
-        return pattern_info["name"], pattern_info["sentiment"], description
+        return final_name, pattern_info["sentiment"], description
     
     def _generate_description(self, pattern_key: str, texts: List[str]) -> str:
         """Generate human-readable description using actual cluster content."""

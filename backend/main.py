@@ -29,8 +29,8 @@ class NarrativeResponse(BaseModel):
     persistence: float
     description: str
     sources: List[str]
-    sources: List[str]
     timeline: List[str]
+    narrative_status: str  # New field: Emerging, Strengthening, Fading, Continuing
 
 
 class NoiseItem(BaseModel):
@@ -165,6 +165,56 @@ async def get_narratives(use_live_data: bool = True):
                 "texts": noise_texts[:3]  # Sample
             })
             
+        # Determine narrative status/continuity using Fuzzy Matching
+        # Compare with _cached_narratives (previous run)
+        
+        # Helper to find best match in previous run
+        def find_best_match(current_name, previous_list):
+            curr_tokens = set(current_name.lower().replace(':', '').replace('(', '').replace(')', '').split())
+            best_match = None
+            best_overlap = 0
+            
+            for prev in previous_list:
+                prev_tokens = set(prev["name"].lower().replace(':', '').replace('(', '').replace(')', '').split())
+                # intersection
+                overlap = len(curr_tokens.intersection(prev_tokens))
+                
+                # We need significant overlap (e.g. > 50% of tokens or at least 2 words)
+                if overlap > best_overlap:
+                    best_overlap = overlap
+                    best_match = prev
+            
+            # Threshold: At least 2 words overlap ("Industrial Demand" matches "Industrial Demand (Solar)")
+            if best_overlap >= 2:
+                return best_match
+            return None
+
+        previous_run = _cached_narratives if _cached_narratives else []
+        
+        for n in narratives:
+            # Try finding a match in previous run
+            prev = find_best_match(n["name"], previous_run)
+            
+            if not prev:
+                # Case 1: Did not exist last run
+                n["narrative_status"] = "Emerging"
+            else:
+                # Case 2: Existed last run - compare metrics
+                curr_p = n["persistence"]
+                prev_p = prev["persistence"]
+                
+                # REFINEMENT: Only move to Continuing/Strengthening if persistence is significant
+                if curr_p < 0.35:
+                     # It persists, but is weak. Keep as Emerging.
+                     n["narrative_status"] = "Emerging"
+                else:
+                    if curr_p > prev_p:
+                        n["narrative_status"] = "Strengthening"
+                    elif curr_p < prev_p:
+                        n["narrative_status"] = "Fading"
+                    else:
+                        n["narrative_status"] = "Continuing"
+                    
         # Update cache
         _cached_narratives = narratives
         _cached_noise = classified_noise

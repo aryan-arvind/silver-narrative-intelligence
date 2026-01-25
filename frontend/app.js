@@ -301,33 +301,26 @@ function updateChartLegend(narratives, colors) {
 function renderNarrativesList(narratives) {
     elements.narrativesList.innerHTML = narratives.map(n => `
         <div class="narrative-card" onclick="showNarrativeDetail('${n.id}')">
-            <div class="narrative-info">
-                <h3>
-                    <span class="narrative-id">${n.id}</span>
-                    ${n.name}
-                </h3>
+            <div class="card-header-section">
+                <div class="card-label">WHAT</div>
+                <h3 class="card-title">${n.name}</h3>
                 <div class="narrative-meta">
-                    <span class="meta-item">
-                        <span class="sentiment-tag ${n.sentiment.toLowerCase()}">${n.sentiment}</span>
-                    </span>
-                    <span class="meta-item">
-                        <span class="stage-tag ${n.stage.toLowerCase()}">${n.stage}</span>
-                    </span>
-                    <span class="meta-item">Sources: ${n.sources.join(', ')}</span>
+                    <span class="status-tag ${(n.narrative_status || 'Emerging').toLowerCase()}">${n.narrative_status || 'Emerging'}</span>
+                    <span class="stage-tag ${n.stage.toLowerCase()}">${n.stage}</span>
                 </div>
             </div>
-            <div class="narrative-metrics">
-                <div class="metric">
-                    <div class="metric-value" style="color: var(--accent-primary)">${Math.round(n.confidence * 100)}%</div>
-                    <div class="metric-label">Confidence</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value" style="color: var(--accent-secondary)">${Math.round(n.coherence * 100)}%</div>
-                    <div class="metric-label">Coherence</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value" style="color: var(--accent-tertiary)">${Math.round(n.persistence * 100)}%</div>
-                    <div class="metric-label">Persistence</div>
+            
+            <div class="card-body-section">
+                <div class="card-label">WHY</div>
+                <p class="card-reasoning">Detected due to strong signal coherence (${Math.round(n.coherence * 100)}%) across ${n.sources.length} distinct data sources.</p>
+            </div>
+
+            <div class="card-footer-section">
+                <div class="card-label">EVIDENCE</div>
+                <div class="mini-metrics-row">
+                    <span class="mini-metric">Coh: <strong>${Math.round(n.coherence * 100)}%</strong></span>
+                    <span class="mini-metric">Per: <strong>${Math.round(n.persistence * 100)}%</strong></span>
+                    <span class="mini-metric">Src: <strong>${n.sources.length}</strong></span>
                 </div>
             </div>
         </div>
@@ -342,6 +335,7 @@ function renderNarrativesGrid(narratives) {
                     <div class="narrative-full-title">${n.name}</div>
                     <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                         <span class="narrative-id">${n.id}</span>
+                        <span class="status-tag ${(n.narrative_status || 'Emerging').toLowerCase()}">${n.narrative_status || 'Emerging'}</span>
                         <span style="font-size: 0.75rem; color: var(--text-muted);">
                             Sources: <span style="color: var(--accent-primary);">${n.sources.join(', ')}</span>
                         </span>
@@ -388,18 +382,21 @@ function renderTimeline(narratives) {
     narratives.forEach(n => {
         (n.timeline || []).forEach(day => {
             if (!periods[day]) periods[day] = [];
-            periods[day].push(n.name);
+            periods[day].push(n);
         });
     });
 
-    const sortedDays = Object.keys(periods).sort();
+    const sortedDays = Object.keys(periods).sort().reverse(); // Reverse to show newest top
 
     elements.timelineContainer.innerHTML = sortedDays.map(day => `
         <div class="timeline-item">
             <div class="timeline-period">${formatDate(day)}</div>
             <div class="timeline-narratives">
-                ${periods[day].map(name => `
-                    <span class="timeline-tag">${name}</span>
+                ${periods[day].map(n => `
+                    <div class="timeline-entry">
+                        <span class="timeline-tag">${n.name}</span>
+                        <span class="status-dot ${(n.narrative_status || 'Emerging').toLowerCase()}" title="${n.narrative_status}"></span>
+                    </div>
                 `).join('')}
             </div>
         </div>
@@ -490,102 +487,96 @@ function removeChatMessage(id) {
 // Detail Panel
 // ============================================
 
-function showNarrativeDetail(id) {
+async function showNarrativeDetail(id) {
     const narrative = narrativesData?.narratives.find(n => n.id === id);
     if (!narrative) return;
 
-    elements.detailTitle.textContent = narrative.name;
-    elements.detailContent.innerHTML = `
-        <div class="detail-section">
-            <div class="detail-section-title">Overview</div>
-            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                <span class="sentiment-tag ${narrative.sentiment.toLowerCase()}">${narrative.sentiment}</span>
-                <span class="stage-tag ${narrative.stage.toLowerCase()}">${narrative.stage}</span>
+    // Switch to War Room (Narrative Explanations) View
+    const warRoomTab = document.querySelector('[data-section="war-room"]');
+    if (warRoomTab) warRoomTab.click();
+
+    // Show initial state in War Room
+    renderExplanationView(narrative, null, true);
+
+    // Fetch deep dive explanation
+    try {
+        const response = await fetch(ENDPOINTS.explain, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                question: `Why is ${narrative.name} classified as ${narrative.stage} stage?`
+            })
+        });
+
+        if (!response.ok) throw new Error('Explanation service unavailable');
+
+        const data = await response.json();
+        renderExplanationView(narrative, data, false);
+
+    } catch (error) {
+        console.error("Explanation error:", error);
+        renderExplanationView(narrative, { explanation: `**Analysis Error**\n\nCould not generate deep dive: ${error.message}` }, false);
+    }
+}
+
+function renderExplanationView(narrative, explanationData, isLoading) {
+    const container = elements.chatHistory;
+
+    if (isLoading) {
+        container.innerHTML = `
+            <div class="explanation-loading">
+                <div class="loading-spinner"></div>
+                <div style="margin-top: 12px; color: var(--accent-primary);">Generating deep dive analysis for <strong>${narrative.name}</strong>...</div>
             </div>
-            <p style="color: var(--text-secondary); line-height: 1.7;">${narrative.description}</p>
-        </div>
-        
-        <div class="detail-section">
-            <div class="detail-section-title">Lifecycle Stage</div>
-            <div style="font-size: 1.25rem; font-weight: 600; color: var(--accent-primary);">${narrative.stage}</div>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">
-                ${getStageDescription(narrative.stage)}
-            </p>
-        </div>
-        
-        <div class="detail-section">
-            <div class="detail-section-title">Metrics</div>
-            <div class="bars-container">
-                <div class="bar-item">
-                    <span class="bar-label">Confidence</span>
-                    <div class="bar-track">
-                        <div class="bar-fill confidence" style="width: ${narrative.confidence * 100}%"></div>
-                    </div>
-                    <span class="bar-value">${Math.round(narrative.confidence * 100)}%</span>
-                </div>
-                <div class="bar-item">
-                    <span class="bar-label">Coherence</span>
-                    <div class="bar-track">
-                        <div class="bar-fill coherence" style="width: ${narrative.coherence * 100}%"></div>
-                    </div>
-                    <span class="bar-value">${Math.round(narrative.coherence * 100)}%</span>
-                </div>
-                <div class="bar-item">
-                    <span class="bar-label">Persistence</span>
-                    <div class="bar-track">
-                        <div class="bar-fill persistence" style="width: ${narrative.persistence * 100}%"></div>
-                    </div>
-                    <span class="bar-value">${Math.round(narrative.persistence * 100)}%</span>
+        `;
+        return;
+    }
+
+    // Render Full Report
+    // Markdown-to-HTML helper for simple bolding
+    const formatText = (text) => text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+    container.innerHTML = `
+        <div class="explanation-report">
+            <div class="report-header">
+                <div class="report-title">${narrative.name}</div>
+                <div class="report-badges">
+                    <span class="badg status ${narrative.narrative_status.toLowerCase()}">${narrative.narrative_status}</span>
+                    <span class="badg stage ${narrative.stage.toLowerCase()}">${narrative.stage}</span>
                 </div>
             </div>
-        </div>
-        
-        <div class="detail-section">
-            <div class="detail-section-title">Timeline Presence</div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                ${(narrative.timeline || []).map(day => `
-                    <span style="
-                        padding: 4px 12px;
-                        background: var(--bg-tertiary);
-                        border-radius: 4px;
-                        font-family: var(--font-mono);
-                        font-size: 0.85rem;
-                    ">${formatDate(day)}</span>
-                `).join('')}
+
+            <div class="report-section analysis">
+                <h3><span class="icon">🧠</span> Autonomous Reasoning</h3>
+                <div class="report-text">${formatText(explanationData.explanation)}</div>
             </div>
-        </div>
-        
-        <div class="detail-section">
-            <div class="detail-section-title">Sources</div>
-            <div style="display: flex; gap: 8px;">
-                ${narrative.sources.map(s => `
-                    <span style="
-                        padding: 4px 12px;
-                        background: var(--accent-primary);
-                        background: rgba(0, 212, 255, 0.15);
-                        color: var(--accent-primary);
-                        border-radius: 4px;
-                        font-size: 0.85rem;
-                    ">${s}</span>
-                `).join('')}
+
+            <div class="report-grid">
+                <div class="report-card metric-card">
+                    <h4>Confidence</h4>
+                    <div class="big-value">${Math.round(narrative.confidence * 100)}%</div>
+                    <div class="sub-text">Signal Strength</div>
+                </div>
+                <div class="report-card metric-card">
+                    <h4>Coherence</h4>
+                    <div class="big-value">${Math.round(narrative.coherence * 100)}%</div>
+                    <div class="sub-text">Semantic Density</div>
+                </div>
+                <div class="report-card metric-card">
+                     <h4>Persistence</h4>
+                    <div class="big-value">${Math.round(narrative.persistence * 100)}%</div>
+                    <div class="sub-text">Temporal Reach</div>
+                </div>
             </div>
         </div>
     `;
-
-    elements.detailPanel.classList.add('open');
-}
-
-function getStageDescription(stage) {
-    const descriptions = {
-        'Early': 'This narrative is just emerging. Limited data points but showing initial patterns.',
-        'Growth': 'The narrative is building momentum. Increasing mentions and strengthening coherence.',
-        'Acceleration': 'Mature narrative with widespread presence. High persistence across time periods.'
-    };
-    return descriptions[stage] || '';
 }
 
 function closeDetailPanel() {
-    elements.detailPanel.classList.remove('open');
+    // Deprecated but kept to prevent errors if called
+    if (elements.detailPanel) elements.detailPanel.classList.remove('open');
 }
 
 // ============================================
@@ -670,18 +661,14 @@ function initEventListeners() {
     elements.errorClose.addEventListener('click', hideError);
     elements.detailClose.addEventListener('click', closeDetailPanel);
 
-    // War Room Listeners
-    if (elements.sendBtn) {
-        elements.sendBtn.addEventListener('click', sendExplanationRequest);
-    }
+    // War Room Input listeners removed per redesign
 
-    if (elements.chatInput) {
-        elements.chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                sendExplanationRequest();
-            }
-        });
-    }
+    // Close detail panel on escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeDetailPanel();
+        }
+    });
 
     // Close detail panel on escape
     document.addEventListener('keydown', (e) => {

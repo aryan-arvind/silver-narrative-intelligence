@@ -2,7 +2,6 @@
 Embedding service using SentenceTransformers for text vectorization.
 """
 
-from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List
 
@@ -19,6 +18,7 @@ class EmbeddingService:
                        all-MiniLM-L6-v2 is fast and effective for clustering.
         """
         print(f"Loading embedding model: {model_name}")
+        from sentence_transformers import SentenceTransformer
         self.model = SentenceTransformer(model_name)
         print("Embedding model loaded successfully")
     
