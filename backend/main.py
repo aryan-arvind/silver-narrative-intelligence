@@ -15,6 +15,7 @@ from embedding_service import get_embedding_service
 from clustering_service import get_clustering_service
 from narrative_analyzer import get_narrative_analyzer
 from data_ingestion_service import get_ingestion_service
+from multi_narrative_generator import get_multi_narrative_generator
 
 from explanation_service import get_explanation_service
 
@@ -22,9 +23,11 @@ from explanation_service import get_explanation_service
 class NarrativeResponse(BaseModel):
     id: str
     name: str
+    strength: int
     stage: str
     confidence: float
     sentiment: str
+    momentum: str
     coherence: float
     persistence: float
     description: str
@@ -87,59 +90,39 @@ async def root():
 @app.get("/api/narratives", response_model=NarrativesAPIResponse)
 async def get_narratives(use_live_data: bool = True):
     """
-    Main endpoint for narrative detection.
+    Main endpoint for multi-narrative detection.
     
-    Args:
-        use_live_data: If True, fetch real-time data from News API and Reddit.
-                      If False, use sample data.
+    Returns 25 concurrent silver market narratives with:
+    - Strength scoring (0-100)
+    - Lifecycle stages (Emerging, Expanding, Peak, Fading)
+    - Sentiment (Bullish, Neutral, Bearish)
+    - Momentum indicators (+/-)
     
-    Pipeline:
-    1. Load news data (live or sample)
-    2. Generate sentence embeddings
-    3. Cluster texts autonomously using HDBSCAN
-    4. Score clusters for coherence and persistence
-    5. Classify as narratives vs noise
-    6. Assign lifecycle stages
-    
-    Returns detected narratives and discarded noise.
+    Active Narrative Definition: strength > 15
+    Dominant Narrative Definition: strength > 60
     """
     global _cached_narratives, _cached_noise
     start_time = time.time()
     
     try:
-        # Step 1: Get data from live sources or sample data
-        if use_live_data:
-            ingestion_service = get_ingestion_service()
-            data = ingestion_service.fetch_all_sources()
-            data_source = "live"
-            
-            # Fallback if live data fails or returns nothing
-            if not data:
-                print("Live data search returned 0 results. Falling back to sample data.")
-                data = SILVER_NEWS_DATA
-                data_source = "sample_fallback"
-        else:
-            data = SILVER_NEWS_DATA
-            data_source = "sample"
+        # Generate 25 concurrent narratives using multi-narrative generator
+        generator = get_multi_narrative_generator()
+        narratives = generator.generate_narratives()
         
-        # Extract texts, timestamps, and sources
-        texts = [item["text"] for item in data]
-        timestamps = [item.get("timestamp", 1) for item in data]
-        text_sources = [item.get("source", "Unknown") for item in data]
-        sources = list(set(text_sources))
+        # Get narrative statistics
+        stats = generator.get_narrative_stats(narratives)
         
-        # Extract or calculate dates
-        today = date.today()
-        dates = []
-        for item in data:
-            if "date" in item:
-                dates.append(item["date"])
-            else:
-                # Calculate from timestamp (days ago) for sample data
-                days_ago = item.get("timestamp", 0)
-                d = today - timedelta(days=days_ago)
-                dates.append(d.strftime("%Y-%m-%d"))
+        # Generate noise items (weak narratives are still tracked but shown as filtered)
+        classified_noise = []
+        for n in narratives:
+            if n["strength"] <= 15:
+                classified_noise.append({
+                    "cluster_id": None,
+                    "reason": f"Low strength signal ({n['strength']}%)",
+                    "texts": [n["description"][:100] + "..."]
+                })
         
+<<<<<<< HEAD
         # Step 2: Generate embeddings
         embedding_service = get_embedding_service()
         embeddings = embedding_service.encode(texts)
@@ -215,6 +198,8 @@ async def get_narratives(use_live_data: bool = True):
                     else:
                         n["narrative_status"] = "Continuing"
                     
+=======
+>>>>>>> 261a5fe (feat: multi-narrative system and reactbits UI upgrade)
         # Update cache
         _cached_narratives = narratives
         _cached_noise = classified_noise
@@ -225,13 +210,13 @@ async def get_narratives(use_live_data: bool = True):
             narratives=narratives,
             noise=classified_noise,
             metadata={
-                "total_documents": len(texts),
-                "clusters_found": len(clusters),
-                "narratives_detected": len(narratives),
-                "noise_discarded": len(classified_noise),
+                "total_narratives": stats["total_narratives"],
+                "active_narratives": stats["active_narratives"],
+                "dominant_narratives": stats["dominant_narratives"],
+                "weak_narratives": stats["weak_narratives"],
                 "processing_time_seconds": processing_time,
-                "data_source": data_source,
-                "sources": sources
+                "data_source": "multi_narrative_generator",
+                "sources": ["Seed Themes", "Market Intelligence"]
             }
         )
         

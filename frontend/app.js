@@ -151,12 +151,15 @@ function updateDashboard(data) {
 }
 
 function updateStatsCards(narratives) {
-    // Active narratives count
-    elements.activeNarratives.textContent = narratives.length;
+    // Active narratives count (strength > 15)
+    const activeCount = narratives.filter(n => n.strength > 15).length;
+    elements.activeNarratives.textContent = activeCount;
 
-    // Market bias - aggregate sentiment
+    // Market bias - aggregate sentiment weighted by strength
     const sentimentCounts = { Bullish: 0, Bearish: 0, Neutral: 0 };
-    narratives.forEach(n => sentimentCounts[n.sentiment]++);
+    narratives.forEach(n => {
+        sentimentCounts[n.sentiment] += n.strength;
+    });
 
     let bias = 'Neutral';
     if (sentimentCounts.Bullish > sentimentCounts.Bearish + sentimentCounts.Neutral) {
@@ -169,15 +172,14 @@ function updateStatsCards(narratives) {
     elements.biasIcon.style.color = bias === 'Bullish' ? 'var(--bullish)' :
         bias === 'Bearish' ? 'var(--bearish)' : 'var(--neutral)';
 
-    // Narrative volatility - variance in confidence scores
-    const confidences = narratives.map(n => n.confidence);
-    const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length || 0;
-    const variance = confidences.reduce((sum, c) => sum + Math.pow(c - avgConfidence, 2), 0) / confidences.length || 0;
-    const volatility = Math.min(Math.sqrt(variance) * 2, 1); // Normalize
-    elements.narrativeVolatility.textContent = volatility < 0.3 ? 'Low' : volatility < 0.6 ? 'Medium' : 'High';
+    // Dominant narratives count (strength > 60)
+    const dominantCount = narratives.filter(n => n.strength > 60).length;
+    elements.narrativeVolatility.textContent = `${dominantCount} Dominant`;
 
-    // Signal confidence - average confidence
-    elements.signalConfidence.textContent = `${Math.round(avgConfidence * 100)}%`;
+    // Signal confidence - average strength of active narratives
+    const activeNarratives = narratives.filter(n => n.strength > 15);
+    const avgStrength = activeNarratives.reduce((sum, n) => sum + n.strength, 0) / activeNarratives.length || 0;
+    elements.signalConfidence.textContent = `${Math.round(avgStrength)}%`;
 }
 
 function updateNarrativeChart(narratives) {
@@ -188,6 +190,12 @@ function updateNarrativeChart(narratives) {
         narrativeChart.destroy();
     }
 
+    // Get top 5 active narratives by strength
+    const top5 = narratives
+        .filter(n => n.strength > 15)
+        .sort((a, b) => b.strength - a.strength)
+        .slice(0, 5);
+
     // Prepare data - each narrative has a timeline
     const colors = [
         'rgba(0, 212, 255, 1)',
@@ -197,14 +205,14 @@ function updateNarrativeChart(narratives) {
         'rgba(255, 71, 87, 1)'
     ];
 
-    const datasets = narratives.map((narrative, idx) => {
+    const datasets = top5.map((narrative, idx) => {
         const color = colors[idx % colors.length];
         const timeline = narrative.timeline || [];
 
-        // Create data points with confidence as Y value
-        const dataPoints = timeline.map(day => ({
-            x: formatDate(day),  // Match the labels
-            y: narrative.confidence * (0.8 + Math.random() * 0.4)
+        // Create data points with strength as Y value (normalized 0-1)
+        const dataPoints = timeline.map((day, dayIdx) => ({
+            x: formatDate(day),
+            y: (narrative.strength / 100) * (0.9 + (dayIdx % 3) * 0.03)
         }));
 
         return {
@@ -285,20 +293,21 @@ function updateNarrativeChart(narratives) {
         }
     });
 
-    // Update legend
-    updateChartLegend(narratives, colors);
+    // Update legend with top 5 names
+    updateChartLegend(top5, colors);
 }
 
 function updateChartLegend(narratives, colors) {
     elements.chartLegend.innerHTML = narratives.map((n, idx) => `
         <div class="legend-item">
             <span class="legend-dot" style="background: ${colors[idx % colors.length]}"></span>
-            <span>${n.name}</span>
+            <span>${n.name} (${n.strength}%)</span>
         </div>
     `).join('');
 }
 
 function renderNarrativesList(narratives) {
+<<<<<<< HEAD
     elements.narrativesList.innerHTML = narratives.map(n => `
         <div class="narrative-card" onclick="showNarrativeDetail('${n.id}')">
             <div class="card-header-section">
@@ -339,41 +348,113 @@ function renderNarrativesGrid(narratives) {
                         <span style="font-size: 0.75rem; color: var(--text-muted);">
                             Sources: <span style="color: var(--accent-primary);">${n.sources.join(', ')}</span>
                         </span>
+=======
+    // Sort by strength and show only active narratives
+    const activeNarratives = narratives
+        .filter(n => n.strength > 15)
+        .sort((a, b) => b.strength - a.strength);
+
+    elements.narrativesList.innerHTML = activeNarratives.map(n => {
+        const momentumIcon = n.momentum === '+' ? '↑' : '↓';
+        const momentumColor = n.momentum === '+' ? 'var(--bullish)' : 'var(--bearish)';
+
+        return `
+            <div class="narrative-card" onclick="showNarrativeDetail('${n.id}')">
+                <div class="narrative-info">
+                    <h3>
+                        <span class="narrative-id">${n.id}</span>
+                        ${n.name}
+                        <span style="font-size: 0.9rem; color: ${momentumColor}; margin-left: 4px;">${momentumIcon}</span>
+                    </h3>
+                    <div class="narrative-meta">
+                        <span class="meta-item">
+                            <span class="sentiment-tag ${n.sentiment.toLowerCase()}">${n.sentiment}</span>
+                        </span>
+                        <span class="meta-item">
+                            <span class="stage-tag ${n.stage.toLowerCase()}">${n.stage}</span>
+                        </span>
+                        <span class="meta-item">Sources: ${n.sources.slice(0, 2).join(', ')}</span>
                     </div>
                 </div>
-                <div>
-                    <span class="sentiment-tag ${n.sentiment.toLowerCase()}">${n.sentiment}</span>
-                    <span class="stage-tag ${n.stage.toLowerCase()}">${n.stage}</span>
+                <div class="narrative-metrics">
+                    <div class="metric">
+                        <div class="metric-value" style="color: var(--accent-primary)">${n.strength}%</div>
+                        <div class="metric-label">Strength</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" style="color: var(--accent-secondary)">${Math.round(n.coherence * 100)}%</div>
+                        <div class="metric-label">Coherence</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" style="color: var(--accent-tertiary)">${Math.round(n.persistence * 100)}%</div>
+                        <div class="metric-label">Persistence</div>
+                    </div>
                 </div>
             </div>
-            <div class="narrative-full-body">
-                <div class="bars-container">
-                    <div class="bar-item">
-                        <span class="bar-label">Confidence</span>
-                        <div class="bar-track">
-                            <div class="bar-fill confidence" style="width: ${n.confidence * 100}%"></div>
+        `;
+    }).join('');
+}
+
+function renderNarrativesGrid(narratives) {
+    // Sort by strength and show all narratives with strength indicator
+    const sortedNarratives = [...narratives].sort((a, b) => b.strength - a.strength);
+
+    elements.narrativesGrid.innerHTML = sortedNarratives.map(n => {
+        const momentumIcon = n.momentum === '+' ? '↑' : '↓';
+        const momentumColor = n.momentum === '+' ? 'var(--bullish)' : 'var(--bearish)';
+        const isWeak = n.strength <= 15;
+        const cardOpacity = isWeak ? '0.6' : '1';
+
+        return `
+            <div class="narrative-full-card" style="opacity: ${cardOpacity}">
+                <div class="narrative-full-header">
+                    <div>
+                        <div class="narrative-full-title">
+                            ${n.name}
+                            <span style="font-size: 0.9rem; color: ${momentumColor}; margin-left: 4px;">${momentumIcon}</span>
                         </div>
-                        <span class="bar-value">${Math.round(n.confidence * 100)}%</span>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                            <span class="narrative-id">${n.id}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">
+                                Sources: <span style="color: var(--accent-primary);">${n.sources.slice(0, 2).join(', ')}</span>
+                            </span>
+                        </div>
                     </div>
-                    <div class="bar-item">
-                        <span class="bar-label">Coherence</span>
-                        <div class="bar-track">
-                            <div class="bar-fill coherence" style="width: ${n.coherence * 100}%"></div>
-                        </div>
-                        <span class="bar-value">${Math.round(n.coherence * 100)}%</span>
-                    </div>
-                    <div class="bar-item">
-                        <span class="bar-label">Persistence</span>
-                        <div class="bar-track">
-                            <div class="bar-fill persistence" style="width: ${n.persistence * 100}%"></div>
-                        </div>
-                        <span class="bar-value">${Math.round(n.persistence * 100)}%</span>
+                    <div>
+                        <span class="sentiment-tag ${n.sentiment.toLowerCase()}">${n.sentiment}</span>
+                        <span class="stage-tag ${n.stage.toLowerCase()}">${n.stage}</span>
+>>>>>>> 261a5fe (feat: multi-narrative system and reactbits UI upgrade)
                     </div>
                 </div>
-                <p class="narrative-description">${n.description}</p>
+                <div class="narrative-full-body">
+                    <div class="bars-container">
+                        <div class="bar-item">
+                            <span class="bar-label">Strength</span>
+                            <div class="bar-track">
+                                <div class="bar-fill confidence" style="width: ${n.strength}%"></div>
+                            </div>
+                            <span class="bar-value">${n.strength}%</span>
+                        </div>
+                        <div class="bar-item">
+                            <span class="bar-label">Coherence</span>
+                            <div class="bar-track">
+                                <div class="bar-fill coherence" style="width: ${n.coherence * 100}%"></div>
+                            </div>
+                            <span class="bar-value">${Math.round(n.coherence * 100)}%</span>
+                        </div>
+                        <div class="bar-item">
+                            <span class="bar-label">Persistence</span>
+                            <div class="bar-track">
+                                <div class="bar-fill persistence" style="width: ${n.persistence * 100}%"></div>
+                            </div>
+                            <span class="bar-value">${Math.round(n.persistence * 100)}%</span>
+                        </div>
+                    </div>
+                    <p class="narrative-description">${n.description}</p>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function renderTimeline(narratives) {
@@ -404,15 +485,46 @@ function renderTimeline(narratives) {
 }
 
 function renderSignals(narratives) {
-    elements.signalsContainer.innerHTML = narratives.map(n => {
+    // Get active narratives (strength > 15) and sort by strength
+    const activeNarratives = narratives
+        .filter(n => n.strength > 15)
+        .sort((a, b) => b.strength - a.strength);
+
+    // Take top 5 for display
+    const top5 = activeNarratives.slice(0, 5);
+    const hiddenCount = activeNarratives.length - 5;
+
+    let html = '';
+
+    // Add indicator for hidden narratives
+    if (hiddenCount > 0) {
+        html += `
+            <div style="
+                text-align: center;
+                padding: 12px;
+                background: var(--bg-tertiary);
+                border-radius: 8px;
+                margin-bottom: 16px;
+                color: var(--text-secondary);
+                font-size: 0.9rem;
+            ">
+                Showing top 5 of <span style="color: var(--accent-primary); font-weight: 600;">${activeNarratives.length}</span> active narratives
+            </div>
+        `;
+    }
+
+    html += top5.map(n => {
         // Generate mini chart data from timeline
         const timeline = n.timeline || [];
         const lastDays = getLastDays(14);
 
-        const barHeights = lastDays.map(day => {
-            // Check if this narrative was active on this day
-            return timeline.includes(day) ? 30 + Math.random() * 30 : 5;
+        const barHeights = lastDays.map((day, idx) => {
+            // Deterministic heights based on strength and position
+            return timeline.includes(day) ? 20 + (n.strength / 3) : 5;
         });
+
+        const momentumIcon = n.momentum === '+' ? '↑' : '↓';
+        const momentumColor = n.momentum === '+' ? 'var(--bullish)' : 'var(--bearish)';
 
         return `
             <div class="signal-card">
@@ -420,7 +532,13 @@ function renderSignals(narratives) {
                     <span class="signal-name">${n.name}</span>
                     <span class="sentiment-tag ${n.sentiment.toLowerCase()}">${n.sentiment}</span>
                 </div>
-                <div class="signal-value">${Math.round(n.confidence * 100)}%</div>
+                <div class="signal-value">
+                    ${n.strength}%
+                    <span style="font-size: 0.9rem; color: ${momentumColor}; margin-left: 4px;">${momentumIcon}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">
+                    ${n.stage} • ${n.sources.slice(0, 2).join(', ')}
+                </div>
                 <div class="signal-chart">
                     ${barHeights.map(h => `
                         <div class="signal-bar" style="height: ${h}px"></div>
@@ -429,6 +547,8 @@ function renderSignals(narratives) {
             </div>
         `;
     }).join('');
+
+    elements.signalsContainer.innerHTML = html;
 }
 
 function renderNoiseAnalysis(narratives, noise) {
