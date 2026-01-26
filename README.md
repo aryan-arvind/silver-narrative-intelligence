@@ -147,8 +147,6 @@ Health check endpoint.
 - CORS enabled for cross-origin requests
 - Graceful error handling with visible error messages
 
----
 
-## 🏆 Hackathon Submission
 
 Built for narrative intelligence, not trading. Focus on clarity and explainability.
