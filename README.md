@@ -1,4 +1,4 @@
-# ECHELON 2.0 - Narrative Detection Agent
+Narrative Detection Agent
 
 **Autonomous Pattern Hunter for Silver Prediction Market**
 
