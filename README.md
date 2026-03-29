@@ -148,5 +148,11 @@ Health check endpoint.
 - Graceful error handling with visible error messages
 
 
+## Contributors
+- **Aryan Turalkar** 
+  github.com/aryan-arvind
 
-Built for narrative intelligence, not trading. Focus on clarity and explainability.
+- **Suryansh Saraf** 
+  github.com/Suryanshsaraf
+
+
